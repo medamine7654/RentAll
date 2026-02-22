@@ -1,0 +1,101 @@
+{# Logement Card Component #}
+{% import 'components/ui_macros.html.twig' as ui %}
+
+{% macro render(logement, host = null) %}
+    <a href="{{ path('app_logement_show', {id: logement.id}) }}" class="block group">
+        <div class="overflow-hidden border-0 bg-transparent shadow-none transition-transform hover:scale-[1.02]">
+            <div class="p-0">
+                {# Image carousel container #}
+                <div 
+                    class="relative aspect-square overflow-hidden rounded-xl"
+                    data-controller="carousel"
+                    data-carousel-images-value="{{ logement.images|json_encode }}"
+                >
+                    {# Main image #}
+                    <img 
+                        src="{{ logement.images[0] ?? asset('placeholder.svg') }}" 
+                        alt="{{ logement.title }}"
+                        class="w-full h-full object-cover transition-transform group-hover:scale-105"
+                        data-carousel-target="image"
+                    >
+
+                    {# Favorite button #}
+                    <button 
+                        type="button"
+                        class="absolute right-2 top-2 h-8 w-8 rounded-full bg-transparent hover:bg-white/10 flex items-center justify-center"
+                        data-controller="favorite"
+                        data-action="click->favorite#toggle"
+                        onclick="event.preventDefault(); event.stopPropagation();"
+                    >
+                        <svg class="h-5 w-5 fill-black/30 text-white" data-favorite-target="icon" fill="currentColor" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                        </svg>
+                    </button>
+
+                    {# Image navigation buttons #}
+                    {% if logement.images|length > 1 %}
+                        <button 
+                            type="button"
+                            class="absolute left-2 top-1/2 h-7 w-7 -translate-y-1/2 rounded-full bg-white/90 shadow-md opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                            data-action="click->carousel#prev"
+                            onclick="event.preventDefault(); event.stopPropagation();"
+                        >
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                            </svg>
+                        </button>
+                        <button 
+                            type="button"
+                            class="absolute right-2 top-1/2 h-7 w-7 -translate-y-1/2 rounded-full bg-white/90 shadow-md opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                            data-action="click->carousel#next"
+                            onclick="event.preventDefault(); event.stopPropagation();"
+                        >
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                            </svg>
+                        </button>
+
+                        {# Image dots indicator #}
+                        <div class="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1" data-carousel-target="dots">
+                            {% for image in logement.images %}
+                                <div class="h-1.5 w-1.5 rounded-full transition-colors {% if loop.first %}bg-white{% else %}bg-white/50{% endif %}" data-index="{{ loop.index0 }}"></div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+                    {# Category badge #}
+                    <div class="absolute left-2 top-2">
+                        {{ ui.badge(logement.category|capitalize, 'secondary') }}
+                    </div>
+                </div>
+
+                {# Card content #}
+                <div class="space-y-1 pt-3">
+                    <div class="flex items-start justify-between gap-2">
+                        <h3 class="font-medium text-gray-900 line-clamp-1">
+                            {{ logement.location }}
+                        </h3>
+                        <div class="flex items-center gap-1 shrink-0">
+                            {{ ui.starRating(logement.rating) }}
+                        </div>
+                    </div>
+                    <p class="text-sm text-gray-500 line-clamp-1">
+                        {{ logement.title }}
+                    </p>
+                    <p class="text-sm text-gray-500">
+                        Hosted by {{ host ? host.name : 'Unknown' }}
+                    </p>
+                    <p class="pt-1">
+                        <span class="font-semibold text-gray-900">${{ logement.pricePerNight }}</span>
+                        <span class="text-gray-500"> night</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </a>
+{% endmacro %}
+
+{# Logement Card Skeleton for loading states #}
+{% macro skeleton() %}
+    {{ ui.skeleton('card') }}
+{% endmacro %}

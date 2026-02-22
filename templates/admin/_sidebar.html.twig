@@ -1,0 +1,56 @@
+{# Sidebar Navigation #}
+{% set current_route = app.request.attributes.get('_route') %}
+
+<!-- Mobile Toggle Button -->
+<button id="mobile-toggle" class="fixed top-4 left-4 z-50 lg:hidden bg-white p-2 rounded-lg shadow-md">
+    <i class="fas fa-bars text-dark"></i>
+</button>
+
+<!-- Mobile Overlay -->
+<div id="mobile-overlay" class="fixed inset-0 bg-black/50 z-40 hidden lg:hidden"></div>
+
+<!-- Sidebar -->
+<aside id="sidebar" class="fixed left-0 top-0 z-40 h-screen bg-white border-r border-gray-200 transition-all duration-300 w-64 -translate-x-full lg:translate-x-0">
+    <!-- Logo Area -->
+    <div class="flex items-center justify-between h-16 px-4 border-b border-gray-200">
+        <div class="flex items-center gap-2">
+            <div class="w-8 h-8 bg-gradient-to-br from-primary to-secondary rounded-lg flex items-center justify-center flex-shrink-0">
+                <i class="fas fa-shield-alt text-white text-sm"></i>
+            </div>
+            <span class="font-bold text-lg text-dark font-heading">RentAdmin</span>
+        </div>
+        <button id="sidebar-toggle" class="hidden lg:flex text-gray-400 hover:text-dark">
+            <i class="fas fa-chevron-left"></i>
+        </button>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="p-3 space-y-1 overflow-y-auto h-[calc(100vh-4rem)]">
+        {% set nav_items = [
+            { route: 'admin_dashboard', icon: 'fa-chart-line', label: 'Tableau de bord' },
+            { route: 'admin_users', icon: 'fa-users', label: 'Utilisateurs' },
+            { route: 'admin_services', icon: 'fa-briefcase', label: 'Services' },
+            { route: 'admin_tools', icon: 'fa-wrench', label: 'Matériel' },
+            { route: 'admin_covoiturages', icon: 'fa-car', label: 'Covoiturages' },
+            { route: 'admin_bookings', icon: 'fa-calendar', label: 'Réservations' },
+            { route: 'admin_reports', icon: 'fa-flag', label: 'Signalements', badge: pending_reports|default(0) },
+            { route: 'admin_analytics', icon: 'fa-chart-bar', label: 'Analytics' },
+            { route: 'admin_settings', icon: 'fa-cog', label: 'Paramètres' },
+        ] %}
+        
+        {% for item in nav_items %}
+            <a href="{{ path(item.route) }}" 
+               class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 {% if current_route == item.route %}bg-primary text-white{% else %}text-dark hover:bg-gray-100{% endif %}">
+                <i class="fas {{ item.icon }} w-5 text-center"></i>
+                <span class="flex-1 text-sm font-medium">{{ item.label }}</span>
+                {% if item.badge is defined and item.badge > 0 %}
+                    <span class="px-2 py-0.5 text-xs rounded-full {% if current_route == item.route %}bg-white/20{% else %}bg-primary text-white{% endif %}">
+                        {{ item.badge }}
+                    </span>
+                {% endif %}
+            </a>
+        {% endfor %}
+    </nav>
+</aside>
+
+

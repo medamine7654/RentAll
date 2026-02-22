@@ -1,0 +1,142 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Utilisateurs - RentAdmin{% endblock %}
+{% block search_placeholder %}Rechercher un utilisateur...{% endblock %}
+
+{% block body %}
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+    <div>
+        <h1 class="text-2xl font-bold text-dark font-heading">Utilisateurs</h1>
+        <p class="text-gray-500 mt-1">Comptes reels depuis la base de donnees</p>
+    </div>
+    <div class="flex flex-wrap items-center gap-2">
+        <span class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">{{ total_users_count|default(0) }} total</span>
+        <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">{{ active_users_count|default(0) }} actifs</span>
+        <span class="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm font-medium">{{ suspended_users_count|default(0) }} suspendus</span>
+        <span class="px-3 py-1 bg-red-100 text-red-700 rounded-full text-sm font-medium">{{ banned_users_count|default(0) }} bannis</span>
+        <span class="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-sm font-medium">{{ flagged_users_count|default(0) }} suspects</span>
+        <a href="{{ path('admin_users_stats') }}" class="px-3 py-2 border border-gray-200 rounded-lg text-sm hover:bg-gray-50">Statistiques</a>
+        <a href="{{ path('admin_users_export', app.request.query.all) }}" class="px-3 py-2 bg-primary text-white rounded-lg text-sm hover:bg-primary/90">Exporter CSV</a>
+    </div>
+</div>
+
+<div class="bg-white rounded-xl shadow-sm p-4 mb-6">
+    <form method="get" class="grid grid-cols-1 lg:grid-cols-5 gap-3" novalidate>
+        <div class="relative lg:col-span-2">
+            <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+            <input type="text"
+                   name="search"
+                   value="{{ filters.search|default('') }}"
+                   placeholder="Rechercher par email..."
+                   class="pl-10 w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
+        </div>
+
+        <select name="role" class="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
+            <option value="">Tous les roles</option>
+            <option value="admin" {% if filters.role|default('') == 'admin' %}selected{% endif %}>Administrateur</option>
+            <option value="host" {% if filters.role|default('') == 'host' %}selected{% endif %}>Hote</option>
+            <option value="guest" {% if filters.role|default('') == 'guest' %}selected{% endif %}>Voyageur</option>
+        </select>
+
+        <select name="status" class="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
+            <option value="">Tous les statuts</option>
+            <option value="active" {% if filters.status|default('') == 'active' %}selected{% endif %}>Actif</option>
+            <option value="suspended" {% if filters.status|default('') == 'suspended' %}selected{% endif %}>Suspendu</option>
+            <option value="banned" {% if filters.status|default('') == 'banned' %}selected{% endif %}>Banni</option>
+            <option value="inactive" {% if filters.status|default('') == 'inactive' %}selected{% endif %}>Inactif</option>
+        </select>
+
+        <div class="flex gap-2">
+            <select name="sort" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                <option value="newest" {% if filters.sort|default('newest') == 'newest' %}selected{% endif %}>Plus recents</option>
+                <option value="oldest" {% if filters.sort|default('newest') == 'oldest' %}selected{% endif %}>Plus anciens</option>
+                <option value="email_asc" {% if filters.sort|default('newest') == 'email_asc' %}selected{% endif %}>Email A-Z</option>
+                <option value="email_desc" {% if filters.sort|default('newest') == 'email_desc' %}selected{% endif %}>Email Z-A</option>
+                <option value="role" {% if filters.sort|default('newest') == 'role' %}selected{% endif %}>Trier par role</option>
+                <option value="status" {% if filters.sort|default('newest') == 'status' %}selected{% endif %}>Trier par statut</option>
+                <option value="risk" {% if filters.sort|default('newest') == 'risk' %}selected{% endif %}>Risque</option>
+            </select>
+            <button type="submit" class="px-4 py-2 bg-primary text-white rounded-lg text-sm hover:bg-primary/90">
+                <i class="fas fa-filter"></i>
+            </button>
+        </div>
+    </form>
+</div>
+
+<div class="bg-white rounded-xl shadow-sm overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full">
+            <thead class="bg-gray-50 border-b border-gray-200">
+                <tr>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Utilisateur</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Statut</th>
+                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+                {% for user in users %}
+                    {% set roles = user.roles %}
+                    {% set isAdmin = 'ROLE_ADMIN' in roles %}
+                    {% set isHost = 'ROLE_HOST' in roles and not isAdmin %}
+                    {% set roleLabel = isAdmin ? 'Administrateur' : (isHost ? 'Hote' : 'Voyageur') %}
+                    <tr class="hover:bg-gray-50 transition-colors">
+                        <td class="px-4 py-3">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full bg-gray-200 text-gray-700 flex items-center justify-center text-sm font-semibold">
+                                    {{ user.email|default('U')|first|upper }}
+                                </div>
+                                <div>
+                                    <p class="font-medium text-dark">{{ user.email|split('@')[0] }}</p>
+                                    <p class="text-sm text-gray-500">{{ user.email }}</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-4 py-3 text-sm">{{ roleLabel }}</td>
+                        <td class="px-4 py-3">
+                            {% if user.accountStatus == 'banned' %}
+                                <span class="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium">Banni</span>
+                            {% elseif user.accountStatus == 'suspended' %}
+                                <span class="px-2 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-medium">Suspendu</span>
+                            {% elseif user.isVerified %}
+                                <span class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">Actif</span>
+                            {% else %}
+                                <span class="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium">Inactif</span>
+                            {% endif %}
+                            <div class="text-xs text-gray-500 mt-1">Risque: {{ user.suspiciousActivityScore }} | Echecs: {{ user.failedLoginAttempts }}</div>
+                        </td>
+                        <td class="px-4 py-3 text-right">
+                            <form method="post" action="{{ path('admin_user_toggle_status', {id: user.id}) }}" class="inline-block" novalidate>
+                                <input type="hidden" name="_token" value="{{ csrf_token('toggle-status' ~ user.id) }}">
+                                <button type="submit" class="px-3 py-1.5 text-xs rounded-lg border {% if user.accountStatus == 'active' %}text-red-600 border-red-200 hover:bg-red-50{% else %}text-green-600 border-green-200 hover:bg-green-50{% endif %}">
+                                    {% if user.accountStatus == 'active' %}Desactiver{% else %}Activer{% endif %}
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="4" class="px-4 py-8 text-center text-gray-500">Aucun utilisateur trouve.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% if suspicious_users is not empty %}
+<div class="bg-white rounded-xl shadow-sm p-4 mt-6">
+    <h2 class="text-lg font-semibold text-dark mb-3">Activite suspecte (top)</h2>
+    <div class="space-y-2">
+        {% for riskyUser in suspicious_users %}
+            <div class="flex items-center justify-between border border-gray-100 rounded-lg px-3 py-2">
+                <div>
+                    <p class="text-sm font-medium text-dark">{{ riskyUser.email }}</p>
+                    <p class="text-xs text-gray-500">Dernier echec: {{ riskyUser.lastFailedLoginAt ? riskyUser.lastFailedLoginAt|date('Y-m-d H:i') : 'N/A' }}</p>
+                </div>
+                <span class="px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-medium">Score {{ riskyUser.suspiciousActivityScore }}</span>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+{% endblock %}

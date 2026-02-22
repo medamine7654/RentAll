@@ -1,0 +1,23 @@
+{% extends 'front/base.html.twig' %}
+
+{% block title %}Inscription - RentAll{% endblock %}
+
+{% block body %}
+<div class="min-h-screen flex items-center justify-center px-4">
+    <div class="max-w-md w-full bg-white shadow-lg rounded-lg p-8">
+        <h1 class="text-2xl font-bold mb-6 text-center">Creer un compte</h1>
+
+        {{ form_start(registrationForm, {'attr': {'class': 'space-y-4'}}) }}
+            {{ form_widget(registrationForm) }}
+            <button type="submit" class="w-full py-2 px-4 rounded-md bg-blue-600 text-white font-medium hover:bg-blue-700">
+                S'inscrire
+            </button>
+        {{ form_end(registrationForm) }}
+
+        <p class="text-sm text-center mt-4">
+            Deja inscrit ?
+            <a href="{{ path('app_login') }}" class="text-blue-600 font-medium">Se connecter</a>
+        </p>
+    </div>
+</div>
+{% endblock %}

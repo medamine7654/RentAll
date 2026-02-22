@@ -1,0 +1,275 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Services - RentAdmin{% endblock %}
+
+{% block search_placeholder %}Rechercher un service...{% endblock %}
+
+{% block body %}
+<!-- Page Header -->
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+    <div>
+        <h1 class="text-2xl font-bold text-dark font-heading">Modération des services</h1>
+        <p class="text-gray-500 mt-1">Examiner et modérer les services proposés</p>
+    </div>
+    <div class="flex items-center gap-2">
+        <span class="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-sm font-medium">{{ pending_count|default(1) }} en attente</span>
+        <span class="px-3 py-1 bg-red-100 text-red-700 rounded-full text-sm font-medium">{{ reported_count|default(1) }} signalés</span>
+    </div>
+</div>
+
+<!-- Tabs -->
+<div class="mb-6">
+    <div class="border-b border-gray-200">
+        <nav class="flex gap-6">
+            <a href="?tab=all" class="pb-3 text-sm font-medium {% if app.request.query.get('tab') != 'pending' and app.request.query.get('tab') != 'reported' %}text-primary border-b-2 border-primary{% else %}text-gray-500 hover:text-dark{% endif %}">
+                Tous les services
+            </a>
+            <a href="?tab=pending" class="pb-3 text-sm font-medium {% if app.request.query.get('tab') == 'pending' %}text-primary border-b-2 border-primary{% else %}text-gray-500 hover:text-dark{% endif %}">
+                En attente
+                {% if pending_count|default(0) > 0 %}
+                    <span class="ml-1 px-1.5 py-0.5 text-xs bg-yellow-500 text-white rounded-full">{{ pending_count }}</span>
+                {% endif %}
+            </a>
+            <a href="?tab=reported" class="pb-3 text-sm font-medium {% if app.request.query.get('tab') == 'reported' %}text-primary border-b-2 border-primary{% else %}text-gray-500 hover:text-dark{% endif %}">
+                Signalés
+                {% if reported_count|default(0) > 0 %}
+                    <span class="ml-1 px-1.5 py-0.5 text-xs bg-red-500 text-white rounded-full">{{ reported_count }}</span>
+                {% endif %}
+            </a>
+        </nav>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="bg-white rounded-xl shadow-sm p-4 mb-6">
+    <form method="get" class="flex flex-col sm:flex-row gap-4" novalidate>
+        <input type="hidden" name="tab" value="{{ app.request.query.get('tab', 'all') }}">
+        <div class="relative flex-1">
+            <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+            <input type="text" 
+                   name="search"
+                   value="{{ app.request.query.get('search') }}"
+                   placeholder="Rechercher un service..."
+                   class="pl-10 w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
+        </div>
+        <select name="status" class="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
+            <option value="">Tous les statuts</option>
+            <option value="approved" {% if app.request.query.get('status') == 'approved' %}selected{% endif %}>Approuvé</option>
+            <option value="pending" {% if app.request.query.get('status') == 'pending' %}selected{% endif %}>En attente</option>
+            <option value="hidden" {% if app.request.query.get('status') == 'hidden' %}selected{% endif %}>Masqué</option>
+            <option value="suspended" {% if app.request.query.get('status') == 'suspended' %}selected{% endif %}>Suspendu</option>
+        </select>
+        <button type="submit" class="px-4 py-2 bg-primary text-white rounded-lg text-sm hover:bg-primary/90 transition-colors">
+            <i class="fas fa-filter"></i>
+        </button>
+    </form>
+</div>
+
+<!-- Services Table -->
+<div class="bg-white rounded-xl shadow-sm overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full">
+            <thead class="bg-gray-50 border-b border-gray-200">
+                <tr>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Service</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Hôte</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Prix</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Statut</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Note</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Sign.</th>
+                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+                {% for service in services|default([
+                    { id: 's1', title: 'Cours de cuisine française', description: 'Apprenez à cuisiner comme un chef', hostId: 'u1', hostName: 'Marie Dubois', status: 'approved', price: 85, category: 'Cuisine', location: 'Paris, France', createdAt: '2023-02-10', bookingsCount: 45, rating: 4.8, reportsCount: 0, image: 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=400' },
+                    { id: 's2', title: 'Séance de yoga au parc', description: 'Yoga en plein air pour tous niveaux', hostId: 'u6', hostName: 'Thomas Moreau', status: 'pending', price: 25, category: 'Sport', location: 'Lyon, France', createdAt: '2024-01-15', bookingsCount: 0, rating: 0, reportsCount: 0, image: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400' },
+                    { id: 's3', title: 'Visite guidée du Louvre', description: 'Découvrez les chefs-d\'œuvre du Louvre', hostId: 'u3', hostName: 'Sophie Bernard', status: 'suspended', price: 50, category: 'Tourisme', location: 'Paris, France', createdAt: '2023-04-20', bookingsCount: 120, rating: 3.2, reportsCount: 4, image: 'https://images.unsplash.com/photo-1499856871958-5b9627545d1a?w=400' },
+                    { id: 's4', title: 'Cours de photographie', description: 'Apprenez les bases de la photographie', hostId: 'u8', hostName: 'Nicolas Fournier', status: 'approved', price: 120, category: 'Art', location: 'Bordeaux, France', createdAt: '2023-07-05', bookingsCount: 28, rating: 4.9, reportsCount: 0, image: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=400' },
+                    { id: 's5', title: 'Massage relaxant à domicile', description: 'Massage professionnel à domicile', hostId: 'u3', hostName: 'Sophie Bernard', status: 'hidden', price: 90, category: 'Bien-être', location: 'Marseille, France', createdAt: '2023-09-12', bookingsCount: 15, rating: 2.5, reportsCount: 3, image: 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=400' },
+                ]) %}
+                    <tr class="hover:bg-gray-50 transition-colors">
+                        <td class="px-4 py-3">
+                            <div class="flex items-center gap-3">
+                                <img src="{{ service.image }}" alt="{{ service.title }}" class="w-12 h-12 object-cover rounded-lg">
+                                <div>
+                                    <p class="font-medium text-dark">{{ service.title }}</p>
+                                    <p class="text-sm text-gray-500 flex items-center gap-1">
+                                        <i class="fas fa-map-marker-alt text-xs"></i>
+                                        {{ service.location }}
+                                    </p>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-4 py-3">
+                            <span class="text-sm">{{ service.hostName }}</span>
+                        </td>
+                        <td class="px-4 py-3">
+                            <span class="text-sm font-medium">{{ service.price }}€</span>
+                        </td>
+                        <td class="px-4 py-3">
+                            {% if service.status == 'approved' %}
+                                <span class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">Approuvé</span>
+                            {% elseif service.status == 'pending' %}
+                                <span class="px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-medium">En attente</span>
+                            {% elseif service.status == 'hidden' %}
+                                <span class="px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">Masqué</span>
+                            {% else %}
+                                <span class="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium">Suspendu</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-4 py-3">
+                            <div class="flex items-center gap-1">
+                                <i class="fas fa-star text-yellow-400 text-sm"></i>
+                                <span class="text-sm">{{ service.rating > 0 ? service.rating : '-' }}</span>
+                            </div>
+                        </td>
+                        <td class="px-4 py-3">
+                            {% if service.reportsCount > 0 %}
+                                <span class="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium">{{ service.reportsCount }}</span>
+                            {% else %}
+                                <span class="px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">0</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-4 py-3 text-right">
+                            <div class="relative inline-block">
+                                <button class="p-2 hover:bg-gray-100 rounded-lg" onclick="toggleDropdown('service-dropdown-{{ service.id }}')">
+                                    <i class="fas fa-ellipsis-h text-gray-400"></i>
+                                </button>
+                                <div id="service-dropdown-{{ service.id }}" class="hidden absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                                    <a href="#" onclick="openServiceModal('{{ service.id }}')" class="flex items-center gap-2 px-4 py-2 text-sm text-dark hover:bg-gray-50">
+                                        <i class="fas fa-eye text-gray-400"></i>
+                                        Voir détails
+                                    </a>
+                                    {% if service.status == 'pending' %}
+                                        <form method="post" action="{{ path('admin_service_approve', {id: service.id}) }}" class="block" novalidate>
+                                            <input type="hidden" name="_token" value="{{ csrf_token('approve' ~ service.id) }}">
+                                            <button type="submit" class="w-full flex items-center gap-2 px-4 py-2 text-sm text-green-600 hover:bg-gray-50 text-left">
+                                                <i class="fas fa-check-circle"></i>
+                                                Approuver
+                                            </button>
+                                        </form>
+                                    {% endif %}
+                                    <form method="post" action="{{ path('admin_service_hide', {id: service.id}) }}" class="block" novalidate>
+                                        <input type="hidden" name="_token" value="{{ csrf_token('hide' ~ service.id) }}">
+                                        <button type="submit" class="w-full flex items-center gap-2 px-4 py-2 text-sm text-dark hover:bg-gray-50 text-left">
+                                            <i class="fas fa-times-circle text-gray-400"></i>
+                                            Masquer
+                                        </button>
+                                    </form>
+                                    <form method="post" action="{{ path('admin_service_suspend', {id: service.id}) }}" class="block" novalidate>
+                                        <input type="hidden" name="_token" value="{{ csrf_token('suspend' ~ service.id) }}">
+                                        <button type="submit" class="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-gray-50 text-left">
+                                            <i class="fas fa-exclamation-triangle"></i>
+                                            Suspendre
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Service Details Modal -->
+<div id="service-modal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl max-w-3xl w-full max-h-[90vh] overflow-auto">
+        <div class="p-6 border-b border-gray-200 flex items-center justify-between">
+            <h3 class="text-xl font-semibold text-dark">Détails du service</h3>
+            <button onclick="closeServiceModal()" class="p-2 hover:bg-gray-100 rounded-lg">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="p-6 space-y-6" id="service-modal-content">
+            <!-- Content loaded via JS -->
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+<script>
+const servicesData = {{ services|default([
+    { id: 's1', title: 'Cours de cuisine française', description: 'Apprenez à cuisiner comme un chef avec des recettes traditionnelles françaises.', hostId: 'u1', hostName: 'Marie Dubois', status: 'approved', price: 85, category: 'Cuisine', location: 'Paris, France', createdAt: '2023-02-10', bookingsCount: 45, rating: 4.8, reportsCount: 0, image: 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=400' },
+    { id: 's2', title: 'Séance de yoga au parc', description: 'Yoga en plein air pour tous niveaux dans un cadre magnifique.', hostId: 'u6', hostName: 'Thomas Moreau', status: 'pending', price: 25, category: 'Sport', location: 'Lyon, France', createdAt: '2024-01-15', bookingsCount: 0, rating: 0, reportsCount: 0, image: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400' },
+    { id: 's3', title: 'Visite guidée du Louvre', description: 'Découvrez les chefs-d\'œuvre du Louvre avec un guide expert.', hostId: 'u3', hostName: 'Sophie Bernard', status: 'suspended', price: 50, category: 'Tourisme', location: 'Paris, France', createdAt: '2023-04-20', bookingsCount: 120, rating: 3.2, reportsCount: 4, image: 'https://images.unsplash.com/photo-1499856871958-5b9627545d1a?w=400' },
+    { id: 's4', title: 'Cours de photographie', description: 'Apprenez les bases de la photographie avec un professionnel.', hostId: 'u8', hostName: 'Nicolas Fournier', status: 'approved', price: 120, category: 'Art', location: 'Bordeaux, France', createdAt: '2023-07-05', bookingsCount: 28, rating: 4.9, reportsCount: 0, image: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=400' },
+    { id: 's5', title: 'Massage relaxant à domicile', description: 'Massage professionnel dans le confort de votre maison.', hostId: 'u3', hostName: 'Sophie Bernard', status: 'hidden', price: 90, category: 'Bien-être', location: 'Marseille, France', createdAt: '2023-09-12', bookingsCount: 15, rating: 2.5, reportsCount: 3, image: 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=400' },
+])|json_encode|raw }};
+
+function openServiceModal(serviceId) {
+    const service = servicesData.find(s => s.id === serviceId);
+    if (!service) return;
+    
+    const statusLabels = { approved: 'Approuvé', pending: 'En attente', hidden: 'Masqué', suspended: 'Suspendu' };
+    const statusClass = { approved: 'bg-green-100 text-green-700', pending: 'bg-yellow-100 text-yellow-700', hidden: 'bg-gray-100 text-gray-700', suspended: 'bg-red-100 text-red-700' };
+    
+    document.getElementById('service-modal-content').innerHTML = `
+        <div class="grid grid-cols-3 gap-2">
+            <img src="${service.image}" class="w-full h-32 object-cover rounded-lg">
+        </div>
+        <div>
+            <h4 class="text-xl font-semibold text-dark">${service.title}</h4>
+            <div class="flex items-center gap-4 mt-2 text-sm text-gray-500">
+                <span><i class="fas fa-map-marker-alt mr-1"></i>${service.location}</span>
+                <span><i class="fas fa-euro-sign mr-1"></i>${service.price}</span>
+                <span><i class="fas fa-star mr-1 text-yellow-400"></i>${service.rating > 0 ? service.rating + '/5' : 'Pas encore noté'}</span>
+            </div>
+        </div>
+        <div class="bg-gray-50 rounded-lg p-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-bold">${service.hostName.charAt(0)}</div>
+                <div>
+                    <p class="font-medium">${service.hostName}</p>
+                    <p class="text-sm text-gray-500">Hôte</p>
+                </div>
+            </div>
+        </div>
+        <div>
+            <h5 class="font-medium mb-2">Description</h5>
+            <p class="text-gray-600">${service.description}</p>
+        </div>
+        <div class="grid grid-cols-3 gap-4">
+            <div class="bg-gray-50 rounded-lg p-4 text-center">
+                <p class="text-2xl font-bold text-primary">${service.bookingsCount}</p>
+                <p class="text-sm text-gray-500">Réservations</p>
+            </div>
+            <div class="bg-gray-50 rounded-lg p-4 text-center">
+                <p class="text-2xl font-bold text-secondary">${service.rating || '-'}</p>
+                <p class="text-sm text-gray-500">Note moyenne</p>
+            </div>
+            <div class="bg-gray-50 rounded-lg p-4 text-center">
+                <p class="text-2xl font-bold ${service.reportsCount > 0 ? 'text-red-600' : 'text-gray-400'}">${service.reportsCount}</p>
+                <p class="text-sm text-gray-500">Signalements</p>
+            </div>
+        </div>
+        <div class="flex gap-2">
+            ${service.status === 'pending' ? `
+                <button class="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                    <i class="fas fa-check-circle mr-2"></i>Approuver
+                </button>
+            ` : ''}
+            <button class="px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50">
+                <i class="fas fa-times-circle mr-2"></i>Masquer
+            </button>
+            <button class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+                <i class="fas fa-exclamation-triangle mr-2"></i>Suspendre
+            </button>
+        </div>
+    `;
+    
+    document.getElementById('service-modal').classList.remove('hidden');
+}
+
+function closeServiceModal() {
+    document.getElementById('service-modal').classList.add('hidden');
+}
+
+document.getElementById('service-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeServiceModal();
+});
+</script>
+{% endblock %}

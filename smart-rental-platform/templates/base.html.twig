@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="{% block meta_description %}Discover unique stays, rent tools, and book services. Your all-in-one rental marketplace.{% endblock %}">
+    <meta name="generator" content="Symfony">
+    
+    <title>{% block title %}RentAll - Stays, Tools & Services{% endblock %}</title>
+    
+    {# Favicon support for light/dark mode #}
+    <link rel="icon" type="image/png" href="{{ asset('icon-light-32x32.png') }}" media="(prefers-color-scheme: light)">
+    <link rel="icon" type="image/png" href="{{ asset('icon-dark-32x32.png') }}" media="(prefers-color-scheme: dark)">
+    <link rel="icon" type="image/svg+xml" href="{{ asset('icon.svg') }}">
+    <link rel="apple-touch-icon" href="{{ asset('apple-icon.png') }}">
+    
+    {% block stylesheets %}
+        {# Tailwind CSS - Add your Tailwind build here #}
+        <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+    {% endblock %}
+</head>
+<body class="font-sans antialiased">
+    {# Include navbar component #}
+    {% include '_navbar.html.twig' %}
+    
+    {# Flash messages #}
+    {% for label, messages in app.flashes %}
+        {% for message in messages %}
+            <div class="container mx-auto px-4 py-2">
+                <div class="rounded-lg border px-4 py-3 {% if label == 'success' %}bg-green-50 border-green-200 text-green-800{% elseif label == 'error' %}bg-red-50 border-red-200 text-red-800{% elseif label == 'warning' %}bg-yellow-50 border-yellow-200 text-yellow-800{% else %}bg-blue-50 border-blue-200 text-blue-800{% endif %}" role="alert">
+                    {{ message }}
+                </div>
+            </div>
+        {% endfor %}
+    {% endfor %}
+    
+    {# Main content area #}
+    <main class="min-h-screen">
+        {% block body %}{% endblock %}
+    </main>
+    
+    {# Footer (optional) #}
+    {% block footer %}
+        <footer class="border-t border-gray-200 bg-gray-50 py-8 mt-12">
+            <div class="container mx-auto px-4">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                    <div>
+                        <h3 class="font-bold text-lg mb-4">RentAll</h3>
+                        <p class="text-sm text-gray-600">Your all-in-one rental marketplace for stays, tools, and services.</p>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold mb-3">Explore</h4>
+                        <ul class="space-y-2 text-sm">
+                            <li><a href="{{ path('app_home') }}" class="text-gray-600 hover:text-gray-900">Stays</a></li>
+                            <li><a href="{{ path('app_tools') }}" class="text-gray-600 hover:text-gray-900">Tools</a></li>
+                            <li><a href="{{ path('app_services') }}" class="text-gray-600 hover:text-gray-900">Services</a></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold mb-3">Support</h4>
+                        <ul class="space-y-2 text-sm">
+                            <li><a href="#" class="text-gray-600 hover:text-gray-900">Help Center</a></li>
+                            <li><a href="#" class="text-gray-600 hover:text-gray-900">Contact Us</a></li>
+                            <li><a href="#" class="text-gray-600 hover:text-gray-900">Safety</a></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold mb-3">Legal</h4>
+                        <ul class="space-y-2 text-sm">
+                            <li><a href="#" class="text-gray-600 hover:text-gray-900">Terms of Service</a></li>
+                            <li><a href="#" class="text-gray-600 hover:text-gray-900">Privacy Policy</a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="mt-8 pt-8 border-t border-gray-200 text-center text-sm text-gray-600">
+                    <p>&copy; {{ "now"|date("Y") }} RentAll. All rights reserved.</p>
+                </div>
+            </div>
+        </footer>
+    {% endblock %}
+    
+    {% block javascripts %}
+        {# Symfony UX Stimulus #}
+        {{ encore_entry_script_tags('app') }}
+    {% endblock %}
+</body>
+</html>

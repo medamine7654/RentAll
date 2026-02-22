@@ -1,0 +1,289 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Matériel - RentAdmin{% endblock %}
+
+{% block search_placeholder %}Rechercher un outil...{% endblock %}
+
+{% block body %}
+<!-- Page Header -->
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+    <div>
+        <h1 class="text-2xl font-bold text-dark font-heading">Modération du matériel</h1>
+        <p class="text-gray-500 mt-1">Examiner et modérer les outils et matériel en location</p>
+    </div>
+    <div class="flex items-center gap-2">
+        <span class="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm font-medium">{{ maintenance_count|default(1) }} en maintenance</span>
+        <span class="px-3 py-1 bg-red-100 text-red-700 rounded-full text-sm font-medium">{{ reported_count|default(1) }} signalés</span>
+    </div>
+</div>
+
+<!-- Tabs -->
+<div class="mb-6">
+    <div class="border-b border-gray-200">
+        <nav class="flex gap-6">
+            <a href="?tab=all" class="pb-3 text-sm font-medium {% if app.request.query.get('tab') != 'maintenance' and app.request.query.get('tab') != 'reported' %}text-primary border-b-2 border-primary{% else %}text-gray-500 hover:text-dark{% endif %}">
+                Tout le matériel
+            </a>
+            <a href="?tab=maintenance" class="pb-3 text-sm font-medium {% if app.request.query.get('tab') == 'maintenance' %}text-primary border-b-2 border-primary{% else %}text-gray-500 hover:text-dark{% endif %}">
+                Maintenance
+                {% if maintenance_count|default(0) > 0 %}
+                    <span class="ml-1 px-1.5 py-0.5 text-xs bg-orange-500 text-white rounded-full">{{ maintenance_count }}</span>
+                {% endif %}
+            </a>
+            <a href="?tab=reported" class="pb-3 text-sm font-medium {% if app.request.query.get('tab') == 'reported' %}text-primary border-b-2 border-primary{% else %}text-gray-500 hover:text-dark{% endif %}">
+                Signalés
+                {% if reported_count|default(0) > 0 %}
+                    <span class="ml-1 px-1.5 py-0.5 text-xs bg-red-500 text-white rounded-full">{{ reported_count }}</span>
+                {% endif %}
+            </a>
+        </nav>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="bg-white rounded-xl shadow-sm p-4 mb-6">
+    <form method="get" class="flex flex-col sm:flex-row gap-4" novalidate>
+        <input type="hidden" name="tab" value="{{ app.request.query.get('tab', 'all') }}">
+        <div class="relative flex-1">
+            <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+            <input type="text" 
+                   name="search"
+                   value="{{ app.request.query.get('search') }}"
+                   placeholder="Rechercher un outil..."
+                   class="pl-10 w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
+        </div>
+        <select name="status" class="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
+            <option value="">Tous les statuts</option>
+            <option value="available" {% if app.request.query.get('status') == 'available' %}selected{% endif %}>Disponible</option>
+            <option value="rented" {% if app.request.query.get('status') == 'rented' %}selected{% endif %}>Loué</option>
+            <option value="maintenance" {% if app.request.query.get('status') == 'maintenance' %}selected{% endif %}>Maintenance</option>
+            <option value="hidden" {% if app.request.query.get('status') == 'hidden' %}selected{% endif %}>Masqué</option>
+            <option value="suspended" {% if app.request.query.get('status') == 'suspended' %}selected{% endif %}>Suspendu</option>
+        </select>
+        <button type="submit" class="px-4 py-2 bg-primary text-white rounded-lg text-sm hover:bg-primary/90 transition-colors">
+            <i class="fas fa-filter"></i>
+        </button>
+    </form>
+</div>
+
+<!-- Tools Table -->
+<div class="bg-white rounded-xl shadow-sm overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full">
+            <thead class="bg-gray-50 border-b border-gray-200">
+                <tr>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Matériel</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Propriétaire</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Prix/jour</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Stock</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Statut</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Sign.</th>
+                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+                {% for tool in tools|default([
+                    { id: 't1', name: 'Perceuse sans fil Bosch', description: 'Perceuse professionnelle 18V avec 2 batteries.', hostId: 'u6', hostName: 'Thomas Moreau', status: 'available', pricePerDay: 15, stock: 3, category: 'Bricolage', location: 'Lyon, France', createdAt: '2023-03-15', rentalsCount: 67, reportsCount: 0, image: 'https://images.unsplash.com/photo-1504148455328-c376907d081c?w=400' },
+                    { id: 't2', name: 'Appareil photo Canon EOS', description: 'Reflex numérique avec objectif 18-55mm.', hostId: 'u8', hostName: 'Nicolas Fournier', status: 'rented', pricePerDay: 35, stock: 2, category: 'Photographie', location: 'Paris, France', createdAt: '2023-05-20', rentalsCount: 45, reportsCount: 1, image: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=400' },
+                    { id: 't3', name: 'Tente de camping 4 personnes', description: 'Tente familiale facile à monter, imperméable.', hostId: 'u1', hostName: 'Marie Dubois', status: 'available', pricePerDay: 25, stock: 5, category: 'Sport', location: 'Grenoble, France', createdAt: '2023-06-10', rentalsCount: 89, reportsCount: 0, image: 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=400' },
+                    { id: 't4', name: 'Scie circulaire', description: 'Scie circulaire professionnelle 1400W.', hostId: 'u3', hostName: 'Sophie Bernard', status: 'suspended', pricePerDay: 30, stock: 1, category: 'Bricolage', location: 'Marseille, France', createdAt: '2023-08-01', rentalsCount: 12, reportsCount: 2, image: 'https://images.unsplash.com/photo-1581094794329-c8112a89af12?w=400' },
+                    { id: 't5', name: 'Kayak gonflable', description: 'Kayak 2 places avec pagaies et gilet de sauvetage.', hostId: 'u6', hostName: 'Thomas Moreau', status: 'maintenance', pricePerDay: 40, stock: 2, category: 'Sport', location: 'Annecy, France', createdAt: '2023-04-05', rentalsCount: 34, reportsCount: 0, image: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=400' },
+                ]) %}
+                    <tr class="hover:bg-gray-50 transition-colors">
+                        <td class="px-4 py-3">
+                            <div class="flex items-center gap-3">
+                                <img src="{{ tool.image }}" alt="{{ tool.name }}" class="w-12 h-12 object-cover rounded-lg">
+                                <div>
+                                    <p class="font-medium text-dark">{{ tool.name }}</p>
+                                    <p class="text-sm text-gray-500 flex items-center gap-1">
+                                        <i class="fas fa-map-marker-alt text-xs"></i>
+                                        {{ tool.location }}
+                                    </p>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-4 py-3">
+                            <span class="text-sm">{{ tool.hostName }}</span>
+                        </td>
+                        <td class="px-4 py-3">
+                            <span class="text-sm font-medium">{{ tool.pricePerDay }}€</span>
+                        </td>
+                        <td class="px-4 py-3">
+                            <div class="flex items-center gap-2">
+                                <span class="text-sm font-medium {% if tool.stock == 0 %}text-red-600{% elseif tool.stock < 3 %}text-yellow-600{% else %}text-green-600{% endif %}">
+                                    {{ tool.stock }}
+                                </span>
+                                <span class="text-xs text-gray-500">unités</span>
+                            </div>
+                        </td>
+                        <td class="px-4 py-3">
+                            {% if tool.status == 'available' %}
+                                <span class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">Disponible</span>
+                            {% elseif tool.status == 'rented' %}
+                                <span class="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">Loué</span>
+                            {% elseif tool.status == 'maintenance' %}
+                                <span class="px-2 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-medium">Maintenance</span>
+                            {% elseif tool.status == 'hidden' %}
+                                <span class="px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">Masqué</span>
+                            {% else %}
+                                <span class="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium">Suspendu</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-4 py-3">
+                            {% if tool.reportsCount > 0 %}
+                                <span class="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium">{{ tool.reportsCount }}</span>
+                            {% else %}
+                                <span class="px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">0</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-4 py-3 text-right">
+                            <div class="relative inline-block">
+                                <button class="p-2 hover:bg-gray-100 rounded-lg" onclick="toggleDropdown('tool-dropdown-{{ tool.id }}')">
+                                    <i class="fas fa-ellipsis-h text-gray-400"></i>
+                                </button>
+                                <div id="tool-dropdown-{{ tool.id }}" class="hidden absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                                    <a href="#" onclick="openToolModal('{{ tool.id }}')" class="flex items-center gap-2 px-4 py-2 text-sm text-dark hover:bg-gray-50">
+                                        <i class="fas fa-eye text-gray-400"></i>
+                                        Voir détails
+                                    </a>
+                                    {% if tool.status == 'suspended' %}
+                                        <form method="post" action="{{ path('admin_tool_activate', {id: tool.id}) }}" class="block" novalidate>
+                                            <input type="hidden" name="_token" value="{{ csrf_token('activate' ~ tool.id) }}">
+                                            <button type="submit" class="w-full flex items-center gap-2 px-4 py-2 text-sm text-green-600 hover:bg-gray-50 text-left">
+                                                <i class="fas fa-check-circle"></i>
+                                                Réactiver
+                                            </button>
+                                        </form>
+                                    {% endif %}
+                                    <form method="post" action="{{ path('admin_tool_hide', {id: tool.id}) }}" class="block" novalidate>
+                                        <input type="hidden" name="_token" value="{{ csrf_token('hide' ~ tool.id) }}">
+                                        <button type="submit" class="w-full flex items-center gap-2 px-4 py-2 text-sm text-dark hover:bg-gray-50 text-left">
+                                            <i class="fas fa-times-circle text-gray-400"></i>
+                                            Masquer
+                                        </button>
+                                    </form>
+                                    <form method="post" action="{{ path('admin_tool_suspend', {id: tool.id}) }}" class="block" novalidate>
+                                        <input type="hidden" name="_token" value="{{ csrf_token('suspend' ~ tool.id) }}">
+                                        <button type="submit" class="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-gray-50 text-left">
+                                            <i class="fas fa-exclamation-triangle"></i>
+                                            Suspendre
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Tool Details Modal -->
+<div id="tool-modal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl max-w-3xl w-full max-h-[90vh] overflow-auto">
+        <div class="p-6 border-b border-gray-200 flex items-center justify-between">
+            <h3 class="text-xl font-semibold text-dark">Détails du matériel</h3>
+            <button onclick="closeToolModal()" class="p-2 hover:bg-gray-100 rounded-lg">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="p-6 space-y-6" id="tool-modal-content">
+            <!-- Content loaded via JS -->
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+<script>
+const toolsData = {{ tools|default([
+    { id: 't1', name: 'Perceuse sans fil Bosch', description: 'Perceuse professionnelle 18V avec 2 batteries.', hostId: 'u6', hostName: 'Thomas Moreau', status: 'available', pricePerDay: 15, stock: 3, category: 'Bricolage', location: 'Lyon, France', createdAt: '2023-03-15', rentalsCount: 67, reportsCount: 0, image: 'https://images.unsplash.com/photo-1504148455328-c376907d081c?w=400' },
+    { id: 't2', name: 'Appareil photo Canon EOS', description: 'Reflex numérique avec objectif 18-55mm.', hostId: 'u8', hostName: 'Nicolas Fournier', status: 'rented', pricePerDay: 35, stock: 2, category: 'Photographie', location: 'Paris, France', createdAt: '2023-05-20', rentalsCount: 45, reportsCount: 1, image: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=400' },
+    { id: 't3', name: 'Tente de camping 4 personnes', description: 'Tente familiale facile à monter, imperméable.', hostId: 'u1', hostName: 'Marie Dubois', status: 'available', pricePerDay: 25, stock: 5, category: 'Sport', location: 'Grenoble, France', createdAt: '2023-06-10', rentalsCount: 89, reportsCount: 0, image: 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=400' },
+    { id: 't4', name: 'Scie circulaire', description: 'Scie circulaire professionnelle 1400W.', hostId: 'u3', hostName: 'Sophie Bernard', status: 'suspended', pricePerDay: 30, stock: 1, category: 'Bricolage', location: 'Marseille, France', createdAt: '2023-08-01', rentalsCount: 12, reportsCount: 2, image: 'https://images.unsplash.com/photo-1581094794329-c8112a89af12?w=400' },
+    { id: 't5', name: 'Kayak gonflable', description: 'Kayak 2 places avec pagaies et gilet de sauvetage.', hostId: 'u6', hostName: 'Thomas Moreau', status: 'maintenance', pricePerDay: 40, stock: 2, category: 'Sport', location: 'Annecy, France', createdAt: '2023-04-05', rentalsCount: 34, reportsCount: 0, image: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=400' },
+])|json_encode|raw }};
+
+function openToolModal(toolId) {
+    const tool = toolsData.find(t => t.id === toolId);
+    if (!tool) return;
+    
+    const statusLabels = { available: 'Disponible', rented: 'Loué', maintenance: 'Maintenance', hidden: 'Masqué', suspended: 'Suspendu' };
+    const statusClass = { available: 'bg-green-100 text-green-700', rented: 'bg-blue-100 text-blue-700', maintenance: 'bg-orange-100 text-orange-700', hidden: 'bg-gray-100 text-gray-700', suspended: 'bg-red-100 text-red-700' };
+    
+    document.getElementById('tool-modal-content').innerHTML = `
+        <div class="grid grid-cols-3 gap-2">
+            <img src="${tool.image}" class="w-full h-32 object-cover rounded-lg">
+        </div>
+        <div>
+            <h4 class="text-xl font-semibold text-dark">${tool.name}</h4>
+            <div class="flex items-center gap-4 mt-2 text-sm text-gray-500">
+                <span><i class="fas fa-map-marker-alt mr-1"></i>${tool.location}</span>
+                <span><i class="fas fa-euro-sign mr-1"></i>${tool.pricePerDay}/jour</span>
+                <span><i class="fas fa-box mr-1"></i>Stock: ${tool.stock}</span>
+            </div>
+        </div>
+        <div class="bg-gray-50 rounded-lg p-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-bold">${tool.hostName.charAt(0)}</div>
+                <div>
+                    <p class="font-medium">${tool.hostName}</p>
+                    <p class="text-sm text-gray-500">Propriétaire</p>
+                </div>
+            </div>
+        </div>
+        <div>
+            <h5 class="font-medium mb-2">Description</h5>
+            <p class="text-gray-600">${tool.description}</p>
+        </div>
+        <div class="grid grid-cols-3 gap-4">
+            <div class="bg-gray-50 rounded-lg p-4 text-center">
+                <p class="text-2xl font-bold text-primary">${tool.rentalsCount}</p>
+                <p class="text-sm text-gray-500">Locations</p>
+            </div>
+            <div class="bg-gray-50 rounded-lg p-4 text-center">
+                <p class="text-2xl font-bold text-secondary">${tool.stock}</p>
+                <p class="text-sm text-gray-500">En stock</p>
+            </div>
+            <div class="bg-gray-50 rounded-lg p-4 text-center">
+                <p class="text-2xl font-bold ${tool.reportsCount > 0 ? 'text-red-600' : 'text-gray-400'}">${tool.reportsCount}</p>
+                <p class="text-sm text-gray-500">Signalements</p>
+            </div>
+        </div>
+        <div>
+            <p class="text-sm text-gray-500 mb-2">Disponibilité du stock</p>
+            <div class="flex items-center gap-4">
+                <div class="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden">
+                    <div class="h-full rounded-full ${tool.stock === 0 ? 'bg-red-500' : tool.stock < 3 ? 'bg-yellow-500' : 'bg-green-500'}" style="width: ${tool.stock * 20}%"></div>
+                </div>
+                <span class="font-medium ${tool.stock === 0 ? 'text-red-600' : tool.stock < 3 ? 'text-yellow-600' : 'text-green-600'}">${tool.stock} unités</span>
+            </div>
+        </div>
+        <div class="flex gap-2">
+            ${tool.status === 'suspended' ? `
+                <button class="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                    <i class="fas fa-check-circle mr-2"></i>Réactiver
+                </button>
+            ` : ''}
+            <button class="px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50">
+                <i class="fas fa-times-circle mr-2"></i>Masquer
+            </button>
+            <button class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+                <i class="fas fa-exclamation-triangle mr-2"></i>Suspendre
+            </button>
+        </div>
+    `;
+    
+    document.getElementById('tool-modal').classList.remove('hidden');
+}
+
+function closeToolModal() {
+    document.getElementById('tool-modal').classList.add('hidden');
+}
+
+document.getElementById('tool-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeToolModal();
+});
+</script>
+{% endblock %}

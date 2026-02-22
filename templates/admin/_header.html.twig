@@ -1,0 +1,98 @@
+{# Header #}
+<header class="sticky top-0 z-30 w-full bg-white/80 backdrop-blur-md border-b border-gray-200">
+    <div class="flex items-center justify-between h-16 px-4 lg:px-8">
+        <div class="flex-1 max-w-xl ml-12 lg:ml-0">
+            <div class="relative">
+                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+                <input type="search"
+                       placeholder="{% block search_placeholder %}Rechercher...{% endblock %}"
+                       class="pl-10 w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors">
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+            {% if is_granted('ROLE_ADMIN') %}
+                <a href="{{ path('app_home') }}" class="flex items-center gap-2 px-3 py-2 text-sm font-medium text-dark border border-gray-200 rounded-lg hover:bg-gray-50">
+                    <i class="fas fa-globe text-gray-500"></i>
+                    Front
+                </a>
+                <button type="button"
+                        id="admin-theme-toggle"
+                        data-theme-toggle
+                        class="flex items-center gap-2 px-3 py-2 text-sm font-medium text-dark border border-gray-200 rounded-lg hover:bg-gray-50">
+                    <span data-theme-icon>DARK</span>
+                    <span data-theme-label>Sombre</span>
+                </button>
+            {% endif %}
+            <div class="relative">
+                <button id="notifications-toggle" class="p-2 hover:bg-gray-100 rounded-lg relative">
+                    <i class="fas fa-bell text-dark"></i>
+                    {% if unread_notifications|default(0) > 0 %}
+                        <span class="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full"></span>
+                    {% endif %}
+                </button>
+
+                <div id="notifications-dropdown" class="hidden absolute right-0 top-full mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                    <div class="p-3 border-b border-gray-200">
+                        <h4 class="font-medium text-sm">Notifications</h4>
+                    </div>
+                    <div class="max-h-64 overflow-auto">
+                        {% for notification in notifications|default([]) %}
+                            <div class="p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-sm font-medium">{{ notification.title }}</span>
+                                    {% if notification.urgent|default(false) %}
+                                        <span class="px-1.5 py-0.5 text-xs bg-red-100 text-red-700 rounded">Urgent</span>
+                                    {% endif %}
+                                </div>
+                                <p class="text-xs text-gray-500 mt-1">{{ notification.message }}</p>
+                                <p class="text-xs text-gray-400 mt-1">{{ notification.time }}</p>
+                            </div>
+                        {% else %}
+                            <div class="p-4 text-center text-gray-500 text-sm">
+                                Aucune notification
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <div class="p-2 border-t border-gray-200 text-center">
+                        <a href="#" class="text-sm text-secondary hover:underline">Voir toutes les notifications</a>
+                    </div>
+                </div>
+            </div>
+
+            <details class="relative">
+                <summary class="list-none flex items-center gap-2 p-2 hover:bg-gray-100 rounded-lg cursor-pointer">
+                    {% if app.user and app.user.avatar %}
+                        {% set admin_avatar_src = app.user.avatar starts with('http') ? app.user.avatar : asset(app.user.avatar) %}
+                        <img src="{{ admin_avatar_src }}" alt="Avatar" class="w-8 h-8 rounded-full object-cover border border-gray-200">
+                    {% else %}
+                        <div class="w-8 h-8 rounded-full bg-gray-200 text-gray-700 flex items-center justify-center text-sm font-semibold">
+                            {{ app.user.email|default('A')|first|upper }}
+                        </div>
+                    {% endif %}
+                    <span class="hidden sm:inline text-sm font-medium text-dark">Admin</span>
+                    <i class="fas fa-chevron-down text-xs text-gray-400"></i>
+                </summary>
+
+                <div class="absolute right-0 top-full mt-2 w-52 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                    <div class="p-3 border-b border-gray-200">
+                        <p class="font-medium text-sm">Mon compte</p>
+                        <p class="text-xs text-gray-500">{{ app.user.email|default('') }}</p>
+                    </div>
+                    <div class="p-1">
+                        <a href="{{ path('admin_settings') }}" class="flex items-center gap-2 px-3 py-2 text-sm text-dark hover:bg-gray-50 rounded-lg">
+                            <i class="fas fa-user text-gray-400"></i>
+                            Profile
+                        </a>
+                    </div>
+                    <div class="p-1 border-t border-gray-200">
+                        <a href="{{ path('app_logout') }}" class="flex items-center gap-2 px-3 py-2 text-sm text-primary hover:bg-red-50 rounded-lg">
+                            <i class="fas fa-sign-out-alt"></i>
+                            Logout
+                        </a>
+                    </div>
+                </div>
+            </details>
+        </div>
+    </div>
+</header>

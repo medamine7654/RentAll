@@ -1,0 +1,169 @@
+{# Navigation Bar Component #}
+<header class="sticky top-0 z-50 w-full border-b border-gray-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
+    <div class="container mx-auto flex h-16 items-center justify-between px-4">
+        {# Logo and Desktop Navigation #}
+        <div class="flex items-center gap-8">
+            {# Logo #}
+            <a href="{{ path('app_home') }}" class="flex items-center gap-2">
+                <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600">
+                    <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                    </svg>
+                </div>
+                <span class="text-xl font-bold text-gray-900">RentAll</span>
+            </a>
+
+            {# Desktop Navigation #}
+            <nav class="hidden items-center gap-1 md:flex">
+                <a href="{{ path('app_home') }}" class="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900">
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                    </svg>
+                    Stays
+                </a>
+                <a href="{{ path('app_tools') }}" class="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900">
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.121 14.121L19 19m-7-7l7-7m-7 7l-2.879 2.879M12 12L9.121 9.121m0 5.758a3 3 0 10-4.243 4.243 3 3 0 004.243-4.243zm0-5.758a3 3 0 10-4.243-4.243 3 3 0 004.243 4.243z"/>
+                    </svg>
+                    Tools
+                </a>
+                <a href="{{ path('app_services') }}" class="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900">
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                    </svg>
+                    Services
+                </a>
+                {% if app.user %}
+                    <a href="{{ path('app_reservations') }}" class="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900">
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                        Reservations
+                    </a>
+                {% endif %}
+                {% if is_granted('ROLE_ADMIN') %}
+                    <a href="{{ path('app_admin') }}" class="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900">
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                        </svg>
+                        Admin
+                    </a>
+                {% endif %}
+            </nav>
+        </div>
+
+        {# Right side actions #}
+        <div class="flex items-center gap-4">
+            {# Host your space button #}
+            {% if is_granted('ROLE_HOST') or is_granted('ROLE_ADMIN') %}
+                <a href="{{ path('app_host_dashboard') }}" class="hidden md:flex px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-md">
+                    Host your space
+                </a>
+            {% endif %}
+
+            {# Language/Globe button #}
+            <button class="hidden md:flex h-10 w-10 items-center justify-center rounded-md text-gray-700 hover:bg-gray-100">
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+            </button>
+
+            {# User menu dropdown #}
+            <div class="relative" data-controller="dropdown">
+                <button 
+                    data-action="click->dropdown#toggle"
+                    class="flex items-center gap-2 rounded-full border border-gray-300 px-2 py-1.5 bg-white hover:shadow-md transition-shadow"
+                    type="button"
+                >
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                    </svg>
+                    {% if app.user %}
+                        <div class="h-7 w-7 rounded-full bg-gray-300 flex items-center justify-center text-sm font-medium text-gray-700">
+                            {% if app.user.avatar %}
+                                <img src="{{ app.user.avatar }}" alt="{{ app.user.name }}" class="h-7 w-7 rounded-full object-cover">
+                            {% else %}
+                                {{ app.user.name|first|upper }}
+                            {% endif %}
+                        </div>
+                    {% else %}
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                        </svg>
+                    {% endif %}
+                </button>
+
+                {# Dropdown menu #}
+                <div 
+                    data-dropdown-target="menu"
+                    class="hidden absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 divide-y divide-gray-100"
+                >
+                    {% if app.user %}
+                        <div class="px-4 py-3">
+                            <p class="text-sm font-medium text-gray-900">{{ app.user.name }}</p>
+                            <p class="text-xs text-gray-500">{{ app.user.email }}</p>
+                            <p class="text-xs text-gray-500 capitalize">{{ app.user.roles|first|replace({'ROLE_': ''}) }} Account</p>
+                        </div>
+                        <div class="py-1">
+                            <a href="{{ path('app_reservations') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">My Reservations</a>
+                            {% if is_granted('ROLE_HOST') or is_granted('ROLE_ADMIN') %}
+                                <a href="{{ path('app_host_dashboard') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Host Dashboard</a>
+                            {% endif %}
+                            {% if is_granted('ROLE_ADMIN') %}
+                                <a href="{{ path('app_admin') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Admin Panel</a>
+                            {% endif %}
+                        </div>
+                        <div class="py-1">
+                            <a href="{{ path('app_logout') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Logout</a>
+                        </div>
+                    {% else %}
+                        <div class="py-1">
+                            <a href="{{ path('app_login') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Login</a>
+                            <a href="{{ path('app_register') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Sign up</a>
+                        </div>
+                        <div class="py-1">
+                            <a href="{{ path('app_home') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Explore stays</a>
+                            <a href="{{ path('app_tools') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Browse tools</a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# Mobile navigation #}
+    <nav class="flex items-center justify-around border-t border-gray-200 py-2 md:hidden">
+        <a href="{{ path('app_home') }}" class="flex flex-col items-center gap-1">
+            <svg class="h-5 w-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+            </svg>
+            <span class="text-xs text-gray-500">Stays</span>
+        </a>
+        <a href="{{ path('app_tools') }}" class="flex flex-col items-center gap-1">
+            <svg class="h-5 w-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.121 14.121L19 19m-7-7l7-7m-7 7l-2.879 2.879M12 12L9.121 9.121m0 5.758a3 3 0 10-4.243 4.243 3 3 0 004.243-4.243zm0-5.758a3 3 0 10-4.243-4.243 3 3 0 004.243 4.243z"/>
+            </svg>
+            <span class="text-xs text-gray-500">Tools</span>
+        </a>
+        <a href="{{ path('app_services') }}" class="flex flex-col items-center gap-1">
+            <svg class="h-5 w-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+            </svg>
+            <span class="text-xs text-gray-500">Services</span>
+        </a>
+        {% if app.user %}
+            <a href="{{ path('app_reservations') }}" class="flex flex-col items-center gap-1">
+                <svg class="h-5 w-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                </svg>
+                <span class="text-xs text-gray-500">Bookings</span>
+            </a>
+        {% endif %}
+        <a href="{% if app.user %}{{ path('app_logout') }}{% else %}{{ path('app_login') }}{% endif %}" class="flex flex-col items-center gap-1">
+            <svg class="h-5 w-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+            </svg>
+            <span class="text-xs text-gray-500">{% if app.user %}Profile{% else %}Login{% endif %}</span>
+        </a>
+    </nav>
+</header>

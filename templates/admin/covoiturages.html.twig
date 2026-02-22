@@ -1,0 +1,110 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Covoiturages - RentAdmin{% endblock %}
+{% block search_placeholder %}Rechercher un covoiturage...{% endblock %}
+
+{% block body %}
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+    <div>
+        <h1 class="text-2xl font-bold text-dark font-heading">Covoiturages</h1>
+        <p class="text-gray-500 mt-1">Gestion, recherche, tri et actions sur les trajets.</p>
+    </div>
+    <div class="flex flex-wrap items-center gap-2">
+        <span class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">{{ total_covoiturages_count|default(0) }} total</span>
+        <a href="{{ path('admin_covoiturages_stats') }}" class="px-3 py-2 border border-gray-200 rounded-lg text-sm hover:bg-gray-50">Statistiques</a>
+    </div>
+</div>
+
+<div class="bg-white rounded-xl shadow-sm p-4 mb-6">
+    <form method="get" class="grid grid-cols-1 lg:grid-cols-5 gap-3" novalidate>
+        <div class="relative lg:col-span-2">
+            <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+            <input type="text"
+                   name="search"
+                   value="{{ filters.search|default('') }}"
+                   placeholder="Depart, destination ou email conducteur..."
+                   class="pl-10 w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
+        </div>
+
+        <input type="text"
+               name="depart"
+               value="{{ filters.depart|default('') }}"
+               placeholder="Filtrer depart"
+               class="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
+
+        <input type="text"
+               name="destination"
+               value="{{ filters.destination|default('') }}"
+               placeholder="Filtrer destination"
+               class="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
+
+        <div class="flex gap-2">
+            <select name="sort" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                <option value="date_desc" {% if filters.sort|default('date_desc') == 'date_desc' %}selected{% endif %}>Date plus recente</option>
+                <option value="date_asc" {% if filters.sort|default('date_desc') == 'date_asc' %}selected{% endif %}>Date plus ancienne</option>
+                <option value="places_desc" {% if filters.sort|default('date_desc') == 'places_desc' %}selected{% endif %}>Places decroissantes</option>
+                <option value="places_asc" {% if filters.sort|default('date_desc') == 'places_asc' %}selected{% endif %}>Places croissantes</option>
+                <option value="depart_asc" {% if filters.sort|default('date_desc') == 'depart_asc' %}selected{% endif %}>Depart A-Z</option>
+                <option value="destination_asc" {% if filters.sort|default('date_desc') == 'destination_asc' %}selected{% endif %}>Destination A-Z</option>
+            </select>
+            <button type="submit" class="px-4 py-2 bg-primary text-white rounded-lg text-sm hover:bg-primary/90">
+                <i class="fas fa-filter"></i>
+            </button>
+        </div>
+    </form>
+</div>
+
+<div class="bg-white rounded-xl shadow-sm overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full">
+            <thead class="bg-gray-50 border-b border-gray-200">
+                <tr>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Trajet</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date depart</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Places</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Conducteur</th>
+                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+                {% for covoiturage in covoiturages %}
+                    <tr class="hover:bg-gray-50 transition-colors">
+                        <td class="px-4 py-3">
+                            <p class="font-medium text-dark">{{ covoiturage.depart }} -> {{ covoiturage.destination }}</p>
+                            <p class="text-sm text-gray-500">ID #{{ covoiturage.id }}</p>
+                        </td>
+                        <td class="px-4 py-3 text-sm text-gray-700">
+                            {{ covoiturage.dateDepart ? covoiturage.dateDepart|date('d/m/Y H:i') : '-' }}
+                        </td>
+                        <td class="px-4 py-3 text-sm text-gray-700">{{ covoiturage.places }}</td>
+                        <td class="px-4 py-3 text-sm text-gray-700">{{ covoiturage.conducteur ? covoiturage.conducteur.email : '-' }}</td>
+                        <td class="px-4 py-3 text-right">
+                            <div class="inline-flex items-center gap-2">
+                                <a href="{{ path('admin_covoiturage_participants', {id: covoiturage.id}) }}" class="px-3 py-1.5 text-xs rounded-lg border border-purple-200 text-purple-700 hover:bg-purple-50">
+                                    Participants
+                                </a>
+                                <a href="{{ path('admin_covoiturage_pdf', {id: covoiturage.id}) }}" target="_blank" class="px-3 py-1.5 text-xs rounded-lg border border-red-200 text-red-600 hover:bg-red-50">
+                                    PDF
+                                </a>
+                                <a href="{{ path('admin_covoiturage_edit', {id: covoiturage.id}) }}" class="px-3 py-1.5 text-xs rounded-lg border border-blue-200 text-blue-700 hover:bg-blue-50">
+                                    Modifier
+                                </a>
+                                <form method="post" action="{{ path('admin_covoiturage_delete', {id: covoiturage.id}) }}" class="inline-block" onsubmit="return confirm('Supprimer ce covoiturage ?');" novalidate>
+                                    <input type="hidden" name="_token" value="{{ csrf_token('delete-covoiturage' ~ covoiturage.id) }}">
+                                    <button type="submit" class="px-3 py-1.5 text-xs rounded-lg border border-red-200 text-red-600 hover:bg-red-50">
+                                        Supprimer
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="5" class="px-4 py-8 text-center text-gray-500">Aucun covoiturage trouve.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,370 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Statistiques Covoiturages - RentAdmin{% endblock %}
+
+{% block body %}
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+    <div>
+        <h1 class="text-2xl font-bold text-dark font-heading">Statistiques Covoiturages</h1>
+        <p class="text-gray-500 mt-1">Analyse des trajets par ville de départ et destination.</p>
+    </div>
+    <div>
+        <a href="{{ path('admin_covoiturages') }}" class="px-3 py-2 border border-gray-200 rounded-lg text-sm hover:bg-gray-50">← Retour à la liste</a>
+    </div>
+</div>
+
+{# Stats Cards #}
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+    <div class="rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 p-6 shadow-lg text-white">
+        <div class="flex items-center justify-between mb-2">
+            <p class="text-sm opacity-90">Total Covoiturages</p>
+            <svg class="w-8 h-8 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17h6m-8 0a2 2 0 100 4 2 2 0 000-4zm10 0a2 2 0 100 4 2 2 0 000-4zM3 7h18M5 17l1.5-6h11L19 17"></path>
+            </svg>
+        </div>
+        <p class="text-4xl font-bold">{{ stats.total|default(0) }}</p>
+    </div>
+    
+    <div class="rounded-xl bg-gradient-to-br from-green-500 to-green-600 p-6 shadow-lg text-white">
+        <div class="flex items-center justify-between mb-2">
+            <p class="text-sm opacity-90">Villes de Départ</p>
+            <svg class="w-8 h-8 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+            </svg>
+        </div>
+        <p class="text-4xl font-bold">{{ stats.by_depart|length }}</p>
+    </div>
+    
+    <div class="rounded-xl bg-gradient-to-br from-red-500 to-red-600 p-6 shadow-lg text-white">
+        <div class="flex items-center justify-between mb-2">
+            <p class="text-sm opacity-90">Villes de Destination</p>
+            <svg class="w-8 h-8 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+            </svg>
+        </div>
+        <p class="text-4xl font-bold">{{ stats.by_destination|length }}</p>
+    </div>
+    
+    <div class="rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 p-6 shadow-lg text-white">
+        <div class="flex items-center justify-between mb-2">
+            <p class="text-sm opacity-90">Trajet le Plus Populaire</p>
+            <svg class="w-8 h-8 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+            </svg>
+        </div>
+        <p class="text-2xl font-bold">{{ stats.by_depart[0].city|default('N/A') }}</p>
+        <p class="text-sm opacity-90">{{ stats.by_depart[0].total|default(0) }} trajets</p>
+    </div>
+</div>
+
+{# Charts Section #}
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+    {# Depart Chart #}
+    <div class="bg-white rounded-xl shadow-sm p-6">
+        <div class="mb-4">
+            <h2 class="text-lg font-semibold text-dark">Trajets par Ville de Départ</h2>
+            <p class="text-sm text-gray-500">Top 10 des villes de départ les plus utilisées</p>
+        </div>
+        <div style="height: 300px;">
+            <canvas id="departChart"></canvas>
+        </div>
+    </div>
+    
+    {# Destination Chart #}
+    <div class="bg-white rounded-xl shadow-sm p-6">
+        <div class="mb-4">
+            <h2 class="text-lg font-semibold text-dark">Trajets par Ville de Destination</h2>
+            <p class="text-sm text-gray-500">Top 10 des destinations les plus populaires</p>
+        </div>
+        <div style="height: 300px;">
+            <canvas id="destinationChart"></canvas>
+        </div>
+    </div>
+</div>
+
+{# Comparison Chart #}
+<div class="bg-white rounded-xl shadow-sm p-6 mb-6">
+    <div class="mb-4">
+        <h2 class="text-lg font-semibold text-dark">Comparaison Départ vs Destination</h2>
+        <p class="text-sm text-gray-500">Vue d'ensemble des trajets les plus fréquents</p>
+    </div>
+    <div style="height: 400px;">
+        <canvas id="comparisonChart"></canvas>
+    </div>
+</div>
+
+{# Tables Section #}
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-green-50 to-emerald-50">
+            <h2 class="font-semibold text-dark flex items-center">
+                <svg class="w-5 h-5 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                </svg>
+                Top Villes de Départ
+            </h2>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">#</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ville</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Trajets</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">%</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    {% for row in stats.by_depart|default([]) %}
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 text-sm text-gray-500">{{ loop.index }}</td>
+                            <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ row.city }}</td>
+                            <td class="px-6 py-4 text-sm text-gray-700 text-right">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    {{ row.total }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-500 text-right">
+                                {{ stats.total > 0 ? ((row.total / stats.total) * 100)|number_format(1) : 0 }}%
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="4" class="px-6 py-8 text-center text-gray-500">Aucune donnée disponible</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-red-50 to-rose-50">
+            <h2 class="font-semibold text-dark flex items-center">
+                <svg class="w-5 h-5 mr-2 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
+                </svg>
+                Top Villes de Destination
+            </h2>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">#</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ville</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Trajets</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">%</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    {% for row in stats.by_destination|default([]) %}
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 text-sm text-gray-500">{{ loop.index }}</td>
+                            <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ row.city }}</td>
+                            <td class="px-6 py-4 text-sm text-gray-700 text-right">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                    {{ row.total }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-500 text-right">
+                                {{ stats.total > 0 ? ((row.total / stats.total) * 100)|number_format(1) : 0 }}%
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="4" class="px-6 py-8 text-center text-gray-500">Aucune donnée disponible</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script>
+        // Prepare data
+        const departData = {{ stats.by_depart|slice(0, 10)|json_encode|raw }};
+        const destinationData = {{ stats.by_destination|slice(0, 10)|json_encode|raw }};
+        
+        // Colors
+        const colors = [
+            'rgba(59, 130, 246, 0.8)',
+            'rgba(16, 185, 129, 0.8)',
+            'rgba(239, 68, 68, 0.8)',
+            'rgba(168, 85, 247, 0.8)',
+            'rgba(245, 158, 11, 0.8)',
+            'rgba(236, 72, 153, 0.8)',
+            'rgba(14, 165, 233, 0.8)',
+            'rgba(34, 197, 94, 0.8)',
+            'rgba(251, 146, 60, 0.8)',
+            'rgba(139, 92, 246, 0.8)'
+        ];
+        
+        // Depart Chart (Bar)
+        const departCtx = document.getElementById('departChart').getContext('2d');
+        new Chart(departCtx, {
+            type: 'bar',
+            data: {
+                labels: departData.map(d => d.city),
+                datasets: [{
+                    label: 'Nombre de trajets',
+                    data: departData.map(d => d.total),
+                    backgroundColor: colors,
+                    borderColor: colors.map(c => c.replace('0.8', '1')),
+                    borderWidth: 2,
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        padding: 12,
+                        titleFont: { size: 14, weight: 'bold' },
+                        bodyFont: { size: 13 }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Destination Chart (Doughnut)
+        const destinationCtx = document.getElementById('destinationChart').getContext('2d');
+        new Chart(destinationCtx, {
+            type: 'doughnut',
+            data: {
+                labels: destinationData.map(d => d.city),
+                datasets: [{
+                    data: destinationData.map(d => d.total),
+                    backgroundColor: colors,
+                    borderColor: '#fff',
+                    borderWidth: 3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            padding: 15,
+                            font: { size: 12 },
+                            generateLabels: function(chart) {
+                                const data = chart.data;
+                                return data.labels.map((label, i) => ({
+                                    text: `${label} (${data.datasets[0].data[i]})`,
+                                    fillStyle: data.datasets[0].backgroundColor[i],
+                                    hidden: false,
+                                    index: i
+                                }));
+                            }
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        padding: 12,
+                        titleFont: { size: 14, weight: 'bold' },
+                        bodyFont: { size: 13 }
+                    }
+                }
+            }
+        });
+        
+        // Comparison Chart (Horizontal Bar)
+        const comparisonCtx = document.getElementById('comparisonChart').getContext('2d');
+        const topCities = [...new Set([...departData.slice(0, 8).map(d => d.city), ...destinationData.slice(0, 8).map(d => d.city)])].slice(0, 10);
+        
+        new Chart(comparisonCtx, {
+            type: 'bar',
+            data: {
+                labels: topCities,
+                datasets: [
+                    {
+                        label: 'Départs',
+                        data: topCities.map(city => {
+                            const found = departData.find(d => d.city === city);
+                            return found ? found.total : 0;
+                        }),
+                        backgroundColor: 'rgba(16, 185, 129, 0.8)',
+                        borderColor: 'rgba(16, 185, 129, 1)',
+                        borderWidth: 2,
+                        borderRadius: 6
+                    },
+                    {
+                        label: 'Destinations',
+                        data: topCities.map(city => {
+                            const found = destinationData.find(d => d.city === city);
+                            return found ? found.total : 0;
+                        }),
+                        backgroundColor: 'rgba(239, 68, 68, 0.8)',
+                        borderColor: 'rgba(239, 68, 68, 1)',
+                        borderWidth: 2,
+                        borderRadius: 6
+                    }
+                ]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            padding: 20,
+                            font: { size: 13, weight: 'bold' }
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        padding: 12,
+                        titleFont: { size: 14, weight: 'bold' },
+                        bodyFont: { size: 13 }
+                    }
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    y: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+{% endblock %}

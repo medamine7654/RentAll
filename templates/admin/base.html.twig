@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>
+        (function () {
+            var key = 'rentall-theme';
+            window.toggleRentallTheme = function () {
+                var dark = document.documentElement.classList.toggle('theme-dark');
+                var value = dark ? 'dark' : 'light';
+                document.documentElement.setAttribute('data-theme', value);
+                try { localStorage.setItem(key, value); } catch (e) {}
+                document.querySelectorAll('[data-theme-label]').forEach(function (el) {
+                    el.textContent = dark ? 'Clair' : 'Sombre';
+                });
+                document.querySelectorAll('[data-theme-icon]').forEach(function (el) {
+                    el.textContent = dark ? 'LIGHT' : 'DARK';
+                });
+            };
+            try {
+                var saved = localStorage.getItem(key);
+                if (!saved) {
+                    saved = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+                }
+                if (saved === 'dark') {
+                    document.documentElement.classList.add('theme-dark');
+                }
+                document.documentElement.setAttribute('data-theme', saved);
+            } catch (e) {}
+        })();
+    </script>
+    <title>{% block title %}RentAdmin - Dashboard{% endblock %}</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Open+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#FF5A5F',
+                        secondary: '#00A699',
+                        dark: '#484848',
+                        light: '#FFFFFF',
+                        background: '#F7F7F7',
+                    },
+                    fontFamily: {
+                        heading: ['Montserrat', 'sans-serif'],
+                        body: ['Open Sans', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ asset('backoffice/css/admin-dashboard.css') }}">
+    <style>
+        html.theme-dark body { background-color: #0b1220 !important; color: #e5e7eb !important; }
+        html.theme-dark .bg-white, html.theme-dark .bg-background { background-color: #111827 !important; }
+        html.theme-dark [class*='bg-white/'] { background-color: #111827 !important; }
+        html.theme-dark .bg-gray-50, html.theme-dark .bg-gray-100 { background-color: #1f2937 !important; }
+        html.theme-dark [class*='bg-gray-50/'], html.theme-dark [class*='bg-gray-100/'] { background-color: #1f2937 !important; }
+        html.theme-dark .text-dark, html.theme-dark .text-gray-700, html.theme-dark .text-gray-600, html.theme-dark .text-gray-500, html.theme-dark .text-gray-400 { color: #d1d5db !important; }
+        html.theme-dark .text-gray-300, html.theme-dark .text-gray-200, html.theme-dark .text-gray-100 { color: #e5e7eb !important; }
+        html.theme-dark .border-gray-200, html.theme-dark .border-gray-100 { border-color: #374151 !important; }
+        html.theme-dark input, html.theme-dark select, html.theme-dark textarea { background-color: #0f172a !important; color: #e5e7eb !important; border-color: #334155 !important; }
+        html.theme-dark main, html.theme-dark .min-h-screen, html.theme-dark table, html.theme-dark thead, html.theme-dark tbody, html.theme-dark tr, html.theme-dark td, html.theme-dark th { color: #e5e7eb !important; }
+        html.theme-dark header.sticky { background-color: rgba(15, 23, 42, 0.92) !important; border-color: #334155 !important; }
+        html.theme-dark header.sticky input[type='search'] { background-color: #0f172a !important; color: #e5e7eb !important; border-color: #334155 !important; }
+        html.theme-dark .hover\:bg-gray-50:hover, html.theme-dark .hover\:bg-gray-100:hover { background-color: #1e293b !important; }
+        html.theme-dark .bg-red-50, html.theme-dark .bg-green-50, html.theme-dark .bg-blue-50, html.theme-dark .bg-yellow-50, html.theme-dark .bg-orange-50 { background-color: rgba(30, 41, 59, 0.9) !important; }
+        html.theme-dark .bg-red-100, html.theme-dark .bg-green-100, html.theme-dark .bg-blue-100, html.theme-dark .bg-yellow-100, html.theme-dark .bg-orange-100 { background-color: rgba(51, 65, 85, 0.95) !important; }
+        html.theme-dark .text-red-700, html.theme-dark .text-green-700, html.theme-dark .text-blue-700, html.theme-dark .text-yellow-700, html.theme-dark .text-orange-700 { color: #f8fafc !important; }
+    </style>
+    
+    {% block stylesheets %}{% endblock %}
+</head>
+<body class="bg-background font-body">
+    <div class="min-h-screen flex">
+        <!-- Sidebar -->
+        {% include 'admin/_sidebar.html.twig' %}
+        
+        <!-- Main Content -->
+        <main class="flex-1 lg:ml-64 transition-all duration-300">
+            <!-- Header -->
+            {% include 'admin/_header.html.twig' %}
+            
+            <!-- Page Content -->
+            <div class="pt-16 p-4 lg:p-8">
+                {% block body %}{% endblock %}
+            </div>
+        </main>
+    </div>
+    
+    <!-- JavaScript -->
+    <script src="{{ asset('backoffice/js/admin-dashboard.js') }}"></script>
+    
+    <!-- Pusher for real-time notifications -->
+    <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
+    <script>
+        // Define functions in global scope so they can be called from onclick handlers
+        
+        // Add notification to dropdown
+        function addNotification(data) {
+            const dropdown = document.getElementById('notifications-dropdown');
+            if (!dropdown) return;
+            
+            const container = dropdown.querySelector('.max-h-64');
+            if (!container) return;
+            
+            // Remove "no notifications" message if present
+            const emptyMsg = container.querySelector('.text-center');
+            if (emptyMsg) {
+                emptyMsg.remove();
+            }
+            
+            // Check if notification already exists
+            const existingNotif = container.querySelector(`[data-notif-id="${data.type}-${data.id}"]`);
+            if (existingNotif) {
+                return; // Avoid duplicates
+            }
+            
+            // Create notification element
+            const notifEl = document.createElement('div');
+            notifEl.className = 'p-3 hover:bg-gray-50 border-b border-gray-100';
+            notifEl.setAttribute('data-notif-id', `${data.type}-${data.id}`);
+            notifEl.innerHTML = `
+                <div class="flex items-center justify-between gap-2 mb-2">
+                    <span class="text-sm font-medium">${data.title}</span>
+                    <span class="px-1.5 py-0.5 text-xs bg-blue-100 text-blue-700 rounded">${data.type === 'reservation' ? 'RÃ©servation' : 'Covoiturage'}</span>
+                </div>
+                <p class="text-xs text-gray-600 mb-2">${data.message}</p>
+                <div class="flex gap-2">
+                    <button onclick="handleConfirm('${data.type}', ${data.id}, this)" 
+                            class="flex-1 px-3 py-1.5 text-xs bg-green-500 text-white rounded hover:bg-green-600 transition-colors">
+                        âœ… Confirmer
+                    </button>
+                    <button onclick="handleReject('${data.type}', ${data.id}, this)" 
+                            class="flex-1 px-3 py-1.5 text-xs bg-red-500 text-white rounded hover:bg-red-600 transition-colors">
+                        âŒ Rejeter
+                    </button>
+                </div>
+            `;
+            
+            // Insert at the top
+            container.insertBefore(notifEl, container.firstChild);
+            
+            // Update badge
+            updateNotificationBadge();
+        }
+        
+        // Show toast notification
+        function showToast(data) {
+            const toast = document.createElement('div');
+            toast.className = 'fixed top-20 right-4 z-50 bg-white rounded-lg shadow-xl border border-gray-200 p-4 max-w-sm animate-slide-in';
+            toast.innerHTML = `
+                <div class="flex items-start gap-3">
+                    <div class="flex-shrink-0 w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                        <i class="fas fa-bell text-blue-600"></i>
+                    </div>
+                    <div class="flex-1">
+                        <h4 class="font-medium text-sm mb-1">${data.title}</h4>
+                        <p class="text-xs text-gray-600 mb-3">${data.message}</p>
+                        <div class="flex gap-2">
+                            <button onclick="handleConfirm('${data.type}', ${data.id}, this)" 
+                                    class="px-3 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600">
+                                Confirmer
+                            </button>
+                            <button onclick="handleReject('${data.type}', ${data.id}, this)" 
+                                    class="px-3 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600">
+                                Rejeter
+                            </button>
+                            <button onclick="this.closest('.animate-slide-in').remove()" 
+                                    class="px-3 py-1 text-xs bg-gray-200 text-gray-700 rounded hover:bg-gray-300">
+                                Fermer
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(toast);
+            
+            // Auto-remove after 30 seconds
+            setTimeout(() => {
+                if (toast.parentElement) {
+                    toast.remove();
+                }
+            }, 30000);
+        }
+        
+        // Handle confirm action
+        async function handleConfirm(type, id, button) {
+            button.disabled = true;
+            button.textContent = 'En cours...';
+            
+            try {
+                const route = type === 'reservation' 
+                    ? `/admin/bookings/${id}/confirm`
+                    : `/admin/covoiturages/${id}/confirm`;
+                
+                const response = await fetch(route, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                
+                const result = await response.json();
+                
+                if (result.ok) {
+                    // Remove notification from dropdown
+                    const notifEl = document.querySelector(`[data-notif-id="${type}-${id}"]`);
+                    if (notifEl) {
+                        notifEl.remove();
+                    }
+                    
+                    // Remove toast if exists
+                    const toast = button.closest('.animate-slide-in');
+                    if (toast) {
+                        toast.remove();
+                    }
+                    
+                    // Show success message
+                    showSuccessToast(result.message || 'ConfirmÃ© avec succÃ¨s');
+                    
+                    // Update badge
+                    updateNotificationBadge();
+                } else {
+                    alert(result.error || 'Erreur lors de la confirmation');
+                    button.disabled = false;
+                    button.textContent = 'âœ… Confirmer';
+                }
+            } catch (error) {
+                console.error('Error confirming:', error);
+                alert('Erreur de connexion');
+                button.disabled = false;
+                button.textContent = 'âœ… Confirmer';
+            }
+        }
+        
+        // Handle reject action
+        async function handleReject(type, id, button) {
+            button.disabled = true;
+            button.textContent = 'En cours...';
+            
+            try {
+                const route = type === 'reservation' 
+                    ? `/admin/bookings/${id}/reject`
+                    : `/admin/covoiturages/${id}/reject`;
+                
+                const response = await fetch(route, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                
+                const result = await response.json();
+                
+                if (result.ok) {
+                    // Remove notification from dropdown
+                    const notifEl = document.querySelector(`[data-notif-id="${type}-${id}"]`);
+                    if (notifEl) {
+                        notifEl.remove();
+                    }
+                    
+                    // Remove toast if exists
+                    const toast = button.closest('.animate-slide-in');
+                    if (toast) {
+                        toast.remove();
+                    }
+                    
+                    // Show success message
+                    showSuccessToast(result.message || 'RejetÃ© avec succÃ¨s');
+                    
+                    // Update badge
+                    updateNotificationBadge();
+                } else {
+                    alert(result.error || 'Erreur lors du rejet');
+                    button.disabled = false;
+                    button.textContent = 'âŒ Rejeter';
+                }
+            } catch (error) {
+                console.error('Error rejecting:', error);
+                alert('Erreur de connexion');
+                button.disabled = false;
+                button.textContent = 'âŒ Rejeter';
+            }
+        }
+        
+        // Show success toast
+        function showSuccessToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'fixed top-20 right-4 z-50 bg-green-500 text-white rounded-lg shadow-xl p-4 max-w-sm animate-slide-in';
+            toast.innerHTML = `
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-check-circle"></i>
+                    <span class="text-sm font-medium">${message}</span>
+                </div>
+            `;
+            
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                if (toast.parentElement) {
+                    toast.remove();
+                }
+            }, 3000);
+        }
+        
+        // Update notification badge
+        function updateNotificationBadge() {
+            const dropdown = document.getElementById('notifications-dropdown');
+            if (!dropdown) return;
+            
+            const container = dropdown.querySelector('.max-h-64');
+            if (!container) return;
+            
+            const notifCount = container.querySelectorAll('[data-notif-id]').length;
+            
+            const badge = document.querySelector('#notifications-toggle .bg-primary');
+            if (notifCount > 0) {
+                if (!badge) {
+                    const newBadge = document.createElement('span');
+                    newBadge.className = 'absolute top-1 right-1 w-2 h-2 bg-primary rounded-full';
+                    const toggle = document.getElementById('notifications-toggle');
+                    if (toggle) {
+                        toggle.appendChild(newBadge);
+                    }
+                }
+            } else {
+                if (badge) {
+                    badge.remove();
+                }
+                
+                // Add "no notifications" message if empty
+                if (notifCount === 0 && !container.querySelector('.text-center')) {
+                    container.innerHTML = `
+                        <div class="p-4 text-center text-gray-500 text-sm">
+                            Aucune notification
+                        </div>
+                    `;
+                }
+            }
+        }
+        
+        // Pusher configuration - set these from your .env file
+        // The values will be injected by Symfony if available
+        const PUSHER_CONFIG = {
+            key: '{{ pusher_key|default('') }}',
+            cluster: '{{ pusher_cluster|default('eu') }}'
+        };
+        
+        // Initialize Pusher if keys are available
+        if (PUSHER_CONFIG.key && PUSHER_CONFIG.key !== '') {
+            try {
+                const pusher = new Pusher(PUSHER_CONFIG.key, {
+                    cluster: PUSHER_CONFIG.cluster
+                });
+
+                const channel = pusher.subscribe('admin-channel');
+        
+                // Listen for new reservation notifications
+                channel.bind('new-reservation', function(data) {
+                    addNotification(data);
+                    showToast(data);
+                });
+                
+                // Listen for new covoiturage notifications
+                channel.bind('new-covoiturage', function(data) {
+                    addNotification(data);
+                    showToast(data);
+                });
+            } catch (error) {
+                console.error('Pusher initialization failed:', error);
+            }
+        } else {
+            console.log('Pusher not configured. Real-time notifications disabled. Add PUSHER_APP_KEY to .env to enable.');
+        }
+    </script>
+    
+    <style>
+        @keyframes slide-in {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        .animate-slide-in {
+            animation: slide-in 0.3s ease-out;
+        }
+    </style>
+    <script>
+        (function () {
+            var key = 'rentall-theme';
+            function updateButtons() {
+                var dark = document.documentElement.classList.contains('theme-dark');
+                document.querySelectorAll('[data-theme-label]').forEach(function (el) {
+                    el.textContent = dark ? 'Clair' : 'Sombre';
+                });
+                document.querySelectorAll('[data-theme-icon]').forEach(function (el) {
+                    el.textContent = dark ? 'LIGHT' : 'DARK';
+                });
+            }
+            function toggleTheme() {
+                var dark = document.documentElement.classList.toggle('theme-dark');
+                var value = dark ? 'dark' : 'light';
+                document.documentElement.setAttribute('data-theme', value);
+                try { localStorage.setItem(key, value); } catch (e) {}
+                updateButtons();
+            }
+            document.addEventListener('click', function (event) {
+                var btn = event.target.closest('[data-theme-toggle]');
+                if (!btn) { return; }
+                event.preventDefault();
+                toggleTheme();
+            });
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', updateButtons, { once: true });
+            } else {
+                updateButtons();
+            }
+        })();
+    </script>
+    
+    {% block javascripts %}{% endblock %}
+</body>
+</html>

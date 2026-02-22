@@ -1,0 +1,145 @@
+{% extends 'front/base.html.twig' %}
+
+{% block title %}Profil{% endblock %}
+
+{% block body %}
+    <section class="container mx-auto px-4 py-10">
+        <div class="max-w-3xl mx-auto space-y-6">
+            <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="w-16 h-16 rounded-full overflow-hidden bg-gray-200 text-gray-700 flex items-center justify-center text-xl font-semibold">
+                        {% if app.user.avatar %}
+                            {% set profile_avatar_src = app.user.avatar starts with('http') ? app.user.avatar : asset(app.user.avatar) %}
+                            <img id="front-profile-avatar-preview" src="{{ profile_avatar_src }}" alt="Avatar" class="w-full h-full object-cover">
+                        {% else %}
+                            <img id="front-profile-avatar-preview" src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt="Avatar" class="w-full h-full object-cover hidden">
+                            <span id="front-profile-avatar-fallback">{{ app.user.email|default('U')|first|upper }}</span>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900">Mon profil</h1>
+                        <p class="text-sm text-gray-500">{{ app.user.email|default('') }}</p>
+                        <p class="text-xs mt-1 {{ app.user.isVerified ? 'text-green-700' : 'text-amber-700' }}">
+                            {{ app.user.isVerified ? 'Compte verifie par reconnaissance faciale' : 'Compte non verifie (selfie + piece d identite requis)' }}
+                        </p>
+                        {% if app.user.faceVerifiedAt %}
+                            <p class="text-xs text-gray-500 mt-1">Derniere verification: {{ app.user.faceVerifiedAt|date('d/m/Y H:i') }}</p>
+                        {% endif %}
+                        <div class="mt-2">
+                            <button type="button" id="front-profile-avatar-trigger" class="px-3 py-1.5 border border-gray-300 rounded-lg text-sm hover:bg-gray-50">
+                                Changer la photo
+                            </button>
+                            <input id="front-profile-avatar-input" form="front-profile-form" type="file" name="avatarFile" accept=".jpg,.jpeg,.png,image/jpeg,image/png" class="hidden">
+                            <p id="front-profile-avatar-filename" class="text-xs text-gray-500 mt-1 hidden"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <form id="front-profile-form" method="post" action="{{ path('app_profile_update') }}" enctype="multipart/form-data" class="grid grid-cols-1 sm:grid-cols-2 gap-4" novalidate data-turbo="false">
+                    <input type="hidden" name="_token" value="{{ csrf_token('profile-update') }}">
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Nom</label>
+                        <input type="text" name="last_name" value="{{ app.user.lastName|default('') }}" class="w-full px-3 py-2 border rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Prenom</label>
+                        <input type="text" name="first_name" value="{{ app.user.firstName|default('') }}" class="w-full px-3 py-2 border rounded-lg">
+                    </div>
+
+                    <div class="sm:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                        <input type="email" name="email" value="{{ app.user.email|default('') }}" required class="w-full px-3 py-2 border rounded-lg">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Telephone</label>
+                        <input type="tel" name="phone" value="{{ app.user.phone|default('') }}" class="w-full px-3 py-2 border rounded-lg">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Selfie (visage)</label>
+                        <input type="file" name="selfieFile" accept=".jpg,.jpeg,.png,image/jpeg,image/png" class="w-full px-3 py-2 border rounded-lg">
+                        {% if app.user.selfieImage %}
+                            <a href="{{ asset(app.user.selfieImage) }}" target="_blank" class="text-xs text-blue-600 hover:underline">Voir selfie actuel</a>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Piece d identite (photo)</label>
+                        <input type="file" name="identityDocumentFile" accept=".jpg,.jpeg,.png,image/jpeg,image/png" class="w-full px-3 py-2 border rounded-lg">
+                        {% if app.user.identityDocumentImage %}
+                            <a href="{{ asset(app.user.identityDocumentImage) }}" target="_blank" class="text-xs text-blue-600 hover:underline">Voir piece actuelle</a>
+                        {% endif %}
+                    </div>
+
+                    <div class="sm:col-span-2 pt-2">
+                        <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                            Enregistrer les modifications
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="bg-white border border-red-200 rounded-xl shadow-sm p-6">
+                <h2 class="text-lg font-semibold text-red-700">Desactiver mon compte</h2>
+                <p class="text-sm text-gray-600 mt-2">
+                    Votre compte sera bloque jusqu'a validation d'un administrateur.
+                </p>
+                <form method="post" action="{{ path('app_profile_deactivate') }}" class="mt-4" novalidate data-turbo="false">
+                    <input type="hidden" name="_token" value="{{ csrf_token('profile-deactivate') }}">
+                    <button type="submit"
+                            onclick="return confirm('Confirmer la desactivation de votre compte ?');"
+                            class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+                        Desactiver mon compte
+                    </button>
+                </form>
+            </div>
+        </div>
+    </section>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const trigger = document.getElementById('front-profile-avatar-trigger');
+            const input = document.getElementById('front-profile-avatar-input');
+            const preview = document.getElementById('front-profile-avatar-preview');
+            const fileName = document.getElementById('front-profile-avatar-filename');
+            const fallback = document.getElementById('front-profile-avatar-fallback');
+
+            if (!trigger || !input) {
+                return;
+            }
+
+            trigger.addEventListener('click', function () {
+                input.click();
+            });
+
+            input.addEventListener('change', function () {
+                const file = input.files && input.files[0] ? input.files[0] : null;
+                if (!file) {
+                    if (fileName) {
+                        fileName.textContent = '';
+                        fileName.classList.add('hidden');
+                    }
+                    return;
+                }
+
+                if (fileName) {
+                    fileName.textContent = file.name;
+                    fileName.classList.remove('hidden');
+                }
+
+                if (preview) {
+                    preview.src = URL.createObjectURL(file);
+                    preview.classList.remove('hidden');
+                }
+                if (fallback) {
+                    fallback.classList.add('hidden');
+                }
+            });
+        });
+    </script>
+{% endblock %}

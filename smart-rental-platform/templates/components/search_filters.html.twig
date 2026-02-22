@@ -1,0 +1,185 @@
+{# Search Filters Component #}
+{% import 'components/ui_macros.html.twig' as ui %}
+
+{% set categories = [
+    {value: 'apartment', label: 'Apartment', icon: 'building'},
+    {value: 'house', label: 'House', icon: 'home'},
+    {value: 'villa', label: 'Villa', icon: 'castle'},
+    {value: 'cabin', label: 'Cabin', icon: 'tree'},
+    {value: 'studio', label: 'Studio', icon: 'building2'},
+    {value: 'loft', label: 'Loft', icon: 'warehouse'}
+] %}
+
+<div class="space-y-4" data-controller="search-filters">
+    {# Search bar #}
+    <div class="flex items-center gap-2">
+        <div class="relative flex-1">
+            <svg class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+            <input 
+                type="text" 
+                name="location"
+                placeholder="Search by location..."
+                value="{{ filters.location ?? '' }}"
+                class="flex h-10 w-full rounded-md border border-gray-300 bg-white pl-9 pr-10 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                data-search-filters-target="searchInput"
+                data-action="input->search-filters#handleSearch"
+            >
+            {% if filters.location %}
+                <button 
+                    type="button"
+                    class="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2 flex items-center justify-center text-gray-400 hover:text-gray-600"
+                    data-action="click->search-filters#clearSearch"
+                >
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            {% endif %}
+        </div>
+
+        {# Filters button with sheet/modal #}
+        <button 
+            type="button"
+            class="flex items-center gap-2 px-4 py-2 rounded-md border border-gray-300 bg-white hover:bg-gray-50 text-sm font-medium"
+            data-action="click->search-filters#toggleFilters"
+        >
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
+            </svg>
+            <span class="hidden sm:inline">Filters</span>
+            {% set activeFiltersCount = 0 %}
+            {% if filters.category %}{% set activeFiltersCount = activeFiltersCount + 1 %}{% endif %}
+            {% if filters.minPrice %}{% set activeFiltersCount = activeFiltersCount + 1 %}{% endif %}
+            {% if filters.maxPrice %}{% set activeFiltersCount = activeFiltersCount + 1 %}{% endif %}
+            {% if filters.guests %}{% set activeFiltersCount = activeFiltersCount + 1 %}{% endif %}
+            
+            {% if activeFiltersCount > 0 %}
+                <span class="flex h-5 w-5 items-center justify-center rounded-full bg-gray-900 text-xs text-white">
+                    {{ activeFiltersCount }}
+                </span>
+            {% endif %}
+        </button>
+    </div>
+
+    {# Category tabs #}
+    <div class="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+        <a 
+            href="{{ path('app_home', filters|merge({category: null})) }}"
+            class="shrink-0 flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium {% if not filters.category %}bg-gray-900 text-white{% else %}border border-gray-300 bg-white text-gray-700 hover:bg-gray-50{% endif %}"
+        >
+            All
+        </a>
+        {% for cat in categories %}
+            <a 
+                href="{{ path('app_home', filters|merge({category: cat.value})) }}"
+                class="shrink-0 flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium {% if filters.category == cat.value %}bg-gray-900 text-white{% else %}border border-gray-300 bg-white text-gray-700 hover:bg-gray-50{% endif %}"
+            >
+                {# Icon placeholder - you can add actual SVG icons here #}
+                <span class="h-5 w-5"></span>
+                {{ cat.label }}
+            </a>
+        {% endfor %}
+    </div>
+
+    {# Filters panel (hidden by default, shown via Stimulus) #}
+    <div 
+        class="hidden fixed inset-0 z-50 bg-black/50"
+        data-search-filters-target="overlay"
+        data-action="click->search-filters#closeFilters"
+    >
+        <div 
+            class="fixed right-0 top-0 h-full w-full max-w-md bg-white shadow-xl overflow-y-auto"
+            data-action="click->search-filters#stopPropagation"
+        >
+            <div class="p-6">
+                {# Header #}
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h2 class="text-lg font-semibold">Filters</h2>
+                        <p class="text-sm text-gray-500">Narrow down your search with these options</p>
+                    </div>
+                    <button 
+                        type="button"
+                        class="text-gray-400 hover:text-gray-600"
+                        data-action="click->search-filters#closeFilters"
+                    >
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+
+                <form method="get" action="{{ path('app_home') }}" class="space-y-6">
+                    {# Preserve location search #}
+                    {% if filters.location %}
+                        <input type="hidden" name="location" value="{{ filters.location }}">
+                    {% endif %}
+
+                    {# Price range #}
+                    <div class="space-y-4">
+                        <label class="text-sm font-medium text-gray-700">Price range per night</label>
+                        <div class="space-y-2">
+                            <input 
+                                type="range" 
+                                name="minPrice"
+                                min="0" 
+                                max="500" 
+                                step="10"
+                                value="{{ filters.minPrice ?? 0 }}"
+                                class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                                data-search-filters-target="minPriceSlider"
+                                data-action="input->search-filters#updatePriceDisplay"
+                            >
+                            <input 
+                                type="range" 
+                                name="maxPrice"
+                                min="0" 
+                                max="500" 
+                                step="10"
+                                value="{{ filters.maxPrice ?? 500 }}"
+                                class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                                data-search-filters-target="maxPriceSlider"
+                                data-action="input->search-filters#updatePriceDisplay"
+                            >
+                            <div class="flex items-center justify-between text-sm">
+                                <span data-search-filters-target="minPriceDisplay">${{ filters.minPrice ?? 0 }}</span>
+                                <span data-search-filters-target="maxPriceDisplay">${{ filters.maxPrice ?? 500 }}+</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {# Guests #}
+                    <div class="space-y-2">
+                        {{ ui.select('guests', {
+                            '': 'Any',
+                            '1': '1 guest',
+                            '2': '2 guests',
+                            '4': '4+ guests',
+                            '6': '6+ guests'
+                        }, filters.guests ?? '', 'Number of guests') }}
+                    </div>
+
+                    {# Action buttons #}
+                    <div class="flex gap-3">
+                        {% if filters.category or filters.minPrice or filters.maxPrice or filters.guests %}
+                            <a 
+                                href="{{ path('app_home') }}"
+                                class="flex-1 px-4 py-2 text-center rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 text-sm font-medium"
+                            >
+                                Clear all filters
+                            </a>
+                        {% endif %}
+                        <button 
+                            type="submit"
+                            class="flex-1 px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 text-sm font-medium"
+                        >
+                            Apply filters
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

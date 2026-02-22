@@ -1,0 +1,381 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Réservations - RentAdmin{% endblock %}
+
+{% block search_placeholder %}Rechercher une réservation...{% endblock %}
+
+{% block body %}
+<!-- Page Header -->
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+    <div>
+        <h1 class="text-2xl font-bold text-dark font-heading">Réservations et locations</h1>
+        <p class="text-gray-500 mt-1">Superviser les réservations et détecter les anomalies</p>
+    </div>
+    <div class="flex items-center gap-2">
+        <span class="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm font-medium">{{ en_attente_count|default(0) }} en attente</span>
+        <span class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">{{ service_bookings_count|default(0) }} confirmées</span>
+        <span class="px-3 py-1 bg-red-100 text-red-700 rounded-full text-sm font-medium">{{ cancelled_count|default(0) }} annulées</span>
+    </div>
+</div>
+
+<!-- Cancellation Alert -->
+{% if cancelled_count|default(0) > 0 %}
+<div class="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-center gap-3 mb-6">
+    <i class="fas fa-exclamation-triangle text-amber-600"></i>
+    <div>
+        <p class="font-medium text-amber-800">Alerte annulations</p>
+        <p class="text-sm text-amber-700">{{ cancelled_count }} réservation(s) annulée(s) récemment. Vérifiez les patterns suspects.</p>
+    </div>
+</div>
+{% endif %}
+
+<!-- Tabs -->
+<div class="mb-6">
+    <div class="border-b border-gray-200">
+        <nav class="flex gap-6">
+            <a href="?tab=all" class="pb-3 text-sm font-medium {% if app.request.query.get('tab') == 'all' or not app.request.query.get('tab') %}text-primary border-b-2 border-primary{% else %}text-gray-500 hover:text-dark{% endif %}">
+                Toutes
+            </a>
+            <a href="?tab=en_attente" class="pb-3 text-sm font-medium {% if app.request.query.get('tab') == 'en_attente' %}text-primary border-b-2 border-primary{% else %}text-gray-500 hover:text-dark{% endif %}">
+                En attente
+                {% if en_attente_count|default(0) > 0 %}
+                    <span class="ml-1 px-1.5 py-0.5 text-xs bg-orange-500 text-white rounded-full">{{ en_attente_count }}</span>
+                {% endif %}
+            </a>
+            <a href="?tab=confirmee" class="pb-3 text-sm font-medium {% if app.request.query.get('tab') == 'confirmee' %}text-primary border-b-2 border-primary{% else %}text-gray-500 hover:text-dark{% endif %}">
+                Confirmées
+            </a>
+            <a href="?tab=refusee" class="pb-3 text-sm font-medium {% if app.request.query.get('tab') == 'refusee' %}text-primary border-b-2 border-primary{% else %}text-gray-500 hover:text-dark{% endif %}">
+                Refusées
+            </a>
+            <a href="?tab=annulee" class="pb-3 text-sm font-medium {% if app.request.query.get('tab') == 'annulee' %}text-primary border-b-2 border-primary{% else %}text-gray-500 hover:text-dark{% endif %}">
+                Annulées
+                {% if cancelled_count|default(0) > 0 %}
+                    <span class="ml-1 px-1.5 py-0.5 text-xs bg-red-500 text-white rounded-full">{{ cancelled_count }}</span>
+                {% endif %}
+            </a>
+        </nav>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="bg-white rounded-xl shadow-sm p-4 mb-6">
+    <form method="get" class="flex flex-col sm:flex-row gap-4" novalidate>
+        <input type="hidden" name="tab" value="{{ app.request.query.get('tab', 'all') }}">
+        <div class="relative flex-1">
+            <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+            <input type="text" 
+                   name="search"
+                   value="{{ app.request.query.get('search') }}"
+                   placeholder="Rechercher une réservation..."
+                   class="pl-10 w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
+        </div>
+        <div class="flex gap-2">
+            <select name="type" class="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                <option value="">Tous les types</option>
+                <option value="service" {% if app.request.query.get('type') == 'service' %}selected{% endif %}>Services</option>
+                <option value="tool" {% if app.request.query.get('type') == 'tool' %}selected{% endif %}>Matériel</option>
+            </select>
+            <select name="status" class="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                <option value="">Tous les statuts</option>
+                <option value="en_attente" {% if app.request.query.get('status') == 'en_attente' %}selected{% endif %}>En attente</option>
+                <option value="confirmee" {% if app.request.query.get('status') == 'confirmee' %}selected{% endif %}>Confirmée</option>
+                <option value="refusee" {% if app.request.query.get('status') == 'refusee' %}selected{% endif %}>Refusée</option>
+                <option value="annulee" {% if app.request.query.get('status') == 'annulee' %}selected{% endif %}>Annulée</option>
+                <option value="terminee" {% if app.request.query.get('status') == 'terminee' %}selected{% endif %}>Terminée</option>
+            </select>
+            <button type="submit" class="px-4 py-2 bg-primary text-white rounded-lg text-sm hover:bg-primary/90 transition-colors">
+                <i class="fas fa-filter"></i>
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Bookings Table -->
+<div class="bg-white rounded-xl shadow-sm overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full">
+            <thead class="bg-gray-50 border-b border-gray-200">
+                <tr>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Item</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Voyageur</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Hôte</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Dates</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Montant</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Statut</th>
+                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+                {% if reservations is defined and reservations|length > 0 %}
+                    {% for reservation in reservations %}
+                        <tr class="hover:bg-gray-50 transition-colors">
+                            <td class="px-4 py-3">
+                                <div class="p-1.5 rounded-lg w-fit bg-blue-100">
+                                    <i class="fas fa-home text-blue-600"></i>
+                                </div>
+                            </td>
+                            <td class="px-4 py-3">
+                                <p class="font-medium text-dark">{{ reservation.logement.titre }}</p>
+                            </td>
+                            <td class="px-4 py-3">
+                                <div>
+                                    <p class="text-sm">
+                                        {% if reservation.locataire.prenom and reservation.locataire.nom %}
+                                            {{ reservation.locataire.prenom }} {{ reservation.locataire.nom }}
+                                        {% else %}
+                                            {{ reservation.locataire.email }}
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </td>
+                            <td class="px-4 py-3">
+                                <div>
+                                    <p class="text-sm">
+                                        {% if reservation.logement.proprietaire.prenom and reservation.logement.proprietaire.nom %}
+                                            {{ reservation.logement.proprietaire.prenom }} {{ reservation.logement.proprietaire.nom }}
+                                        {% else %}
+                                            {{ reservation.logement.proprietaire.email }}
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </td>
+                            <td class="px-4 py-3">
+                                <p class="text-sm">{{ reservation.dateDebut|date('d/m/Y') }}</p>
+                                <p class="text-xs text-gray-500">au {{ reservation.dateFin|date('d/m/Y') }}</p>
+                            </td>
+                            <td class="px-4 py-3">
+                                <span class="font-medium">{{ reservation.montantTotal }}€</span>
+                            </td>
+                            <td class="px-4 py-3">
+                                {% if reservation.statut == 'en_attente' %}
+                                    <span class="px-2 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-medium">⏳ En attente</span>
+                                {% elseif reservation.statut == 'confirmee' %}
+                                    <span class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">✓ Confirmée</span>
+                                {% elseif reservation.statut == 'refusee' %}
+                                    <span class="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium">✕ Refusée</span>
+                                {% elseif reservation.statut == 'terminee' %}
+                                    <span class="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">✓ Terminée</span>
+                                {% else %}
+                                    <span class="px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">✕ Annulée</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-4 py-3">
+                                <div class="flex items-center justify-end gap-2">
+                                    {# Dropdown pour changer le statut #}
+                                    <div class="relative inline-block" data-dropdown>
+                                        <button type="button" 
+                                                onclick="toggleDropdown(event, 'status-{{ reservation.id }}')"
+                                                class="p-2 hover:bg-gray-100 rounded-lg inline-block transition-colors"
+                                                title="Changer le statut">
+                                            <i class="fas fa-exchange-alt text-blue-600"></i>
+                                        </button>
+                                        <div id="status-{{ reservation.id }}" 
+                                             class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 z-50">
+                                            <div class="py-1">
+                                                <form method="post" action="{{ path('admin_booking_change_status', {id: reservation.id}) }}" class="block">
+                                                    <input type="hidden" name="_token" value="{{ csrf_token('status' ~ reservation.id) }}">
+                                                    <input type="hidden" name="status" value="en_attente">
+                                                    <button type="submit" class="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 flex items-center gap-2">
+                                                        <span class="w-2 h-2 bg-orange-500 rounded-full"></span>
+                                                        En attente
+                                                    </button>
+                                                </form>
+                                                <form method="post" action="{{ path('admin_booking_change_status', {id: reservation.id}) }}" class="block">
+                                                    <input type="hidden" name="_token" value="{{ csrf_token('status' ~ reservation.id) }}">
+                                                    <input type="hidden" name="status" value="confirmee">
+                                                    <button type="submit" class="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 flex items-center gap-2">
+                                                        <span class="w-2 h-2 bg-green-500 rounded-full"></span>
+                                                        Confirmée
+                                                    </button>
+                                                </form>
+                                                <form method="post" action="{{ path('admin_booking_change_status', {id: reservation.id}) }}" class="block">
+                                                    <input type="hidden" name="_token" value="{{ csrf_token('status' ~ reservation.id) }}">
+                                                    <input type="hidden" name="status" value="refusee">
+                                                    <button type="submit" class="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 flex items-center gap-2">
+                                                        <span class="w-2 h-2 bg-red-500 rounded-full"></span>
+                                                        Refusée
+                                                    </button>
+                                                </form>
+                                                <form method="post" action="{{ path('admin_booking_change_status', {id: reservation.id}) }}" class="block">
+                                                    <input type="hidden" name="_token" value="{{ csrf_token('status' ~ reservation.id) }}">
+                                                    <input type="hidden" name="status" value="annulee">
+                                                    <button type="submit" class="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 flex items-center gap-2">
+                                                        <span class="w-2 h-2 bg-gray-500 rounded-full"></span>
+                                                        Annulée
+                                                    </button>
+                                                </form>
+                                                <form method="post" action="{{ path('admin_booking_change_status', {id: reservation.id}) }}" class="block">
+                                                    <input type="hidden" name="_token" value="{{ csrf_token('status' ~ reservation.id) }}">
+                                                    <input type="hidden" name="status" value="terminee">
+                                                    <button type="submit" class="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 flex items-center gap-2">
+                                                        <span class="w-2 h-2 bg-blue-500 rounded-full"></span>
+                                                        Terminée
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    {# Bouton voir détails #}
+                                    <button type="button"
+                                            onclick="openBookingModal({{ reservation.id }})"
+                                            class="p-2 hover:bg-gray-100 rounded-lg inline-block transition-colors"
+                                            title="Voir les détails">
+                                        <i class="fas fa-eye text-gray-600"></i>
+                                    </button>
+                                    
+                                    {# Bouton PDF #}
+                                    <a href="{{ path('admin_booking_pdf', {id: reservation.id}) }}" 
+                                       target="_blank"
+                                       class="p-2 hover:bg-red-50 rounded-lg inline-block transition-colors"
+                                       title="Télécharger PDF">
+                                        <i class="fas fa-file-pdf text-red-600"></i>
+                                    </a>
+                                    
+                                    {# Bouton supprimer #}
+                                    <form method="post" 
+                                          action="{{ path('admin_booking_delete', {id: reservation.id}) }}" 
+                                          onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cette réservation ? Cette action est irréversible.')"
+                                          class="inline-block">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ reservation.id) }}">
+                                        <button type="submit" 
+                                                class="p-2 hover:bg-red-50 rounded-lg transition-colors"
+                                                title="Supprimer">
+                                            <i class="fas fa-trash text-red-600"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="8" class="px-4 py-8 text-center text-gray-500">
+                            <i class="fas fa-inbox text-4xl mb-2"></i>
+                            <p>Aucune réservation trouvée</p>
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Booking Details Modal -->
+<div id="booking-modal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-auto">
+        <div class="p-6 border-b border-gray-200 flex items-center justify-between">
+            <h3 class="text-xl font-semibold text-dark">Détails de la réservation</h3>
+            <button onclick="closeBookingModal()" class="p-2 hover:bg-gray-100 rounded-lg">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="p-6 space-y-6" id="booking-modal-content">
+            <!-- Content loaded via JS -->
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+<script>
+// Toggle dropdown
+function toggleDropdown(event, dropdownId) {
+    event.stopPropagation();
+    const dropdown = document.getElementById(dropdownId);
+    const allDropdowns = document.querySelectorAll('[id^="status-"]');
+    
+    // Fermer tous les autres dropdowns
+    allDropdowns.forEach(d => {
+        if (d.id !== dropdownId) {
+            d.classList.add('hidden');
+        }
+    });
+    
+    // Toggle le dropdown actuel
+    dropdown.classList.toggle('hidden');
+}
+
+// Fermer les dropdowns en cliquant ailleurs
+document.addEventListener('click', function(event) {
+    const allDropdowns = document.querySelectorAll('[id^="status-"]');
+    allDropdowns.forEach(d => d.classList.add('hidden'));
+});
+
+// Ouvrir la modale avec les détails de la réservation
+function openBookingModal(reservationId) {
+    // Trouver la réservation dans le tableau
+    const row = document.querySelector(`button[onclick="openBookingModal(${reservationId})"]`).closest('tr');
+    
+    if (!row) return;
+    
+    // Extraire les données de la ligne
+    const logement = row.cells[1].textContent.trim();
+    const voyageur = row.cells[2].textContent.trim();
+    const hote = row.cells[3].textContent.trim();
+    const dates = row.cells[4].textContent.trim();
+    const montant = row.cells[5].textContent.trim();
+    const statut = row.cells[6].textContent.trim();
+    
+    // Remplir la modale
+    document.getElementById('booking-modal-content').innerHTML = `
+        <div class="space-y-4">
+            <div class="flex items-center justify-between pb-4 border-b">
+                <div>
+                    <p class="text-sm text-gray-500">Réservation #${reservationId}</p>
+                    <h3 class="text-xl font-bold text-gray-900 mt-1">${logement}</h3>
+                </div>
+                <span class="px-3 py-1 rounded-full text-xs font-medium ${getStatusClass(statut)}">${statut}</span>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4">
+                <div class="bg-gray-50 rounded-lg p-4">
+                    <p class="text-sm text-gray-500 mb-2">👤 Voyageur</p>
+                    <p class="font-medium text-gray-900">${voyageur}</p>
+                </div>
+                <div class="bg-gray-50 rounded-lg p-4">
+                    <p class="text-sm text-gray-500 mb-2">🏠 Hôte</p>
+                    <p class="font-medium text-gray-900">${hote}</p>
+                </div>
+            </div>
+            
+            <div class="bg-gray-50 rounded-lg p-4">
+                <p class="text-sm text-gray-500 mb-2">📅 Dates</p>
+                <p class="font-medium text-gray-900">${dates}</p>
+            </div>
+            
+            <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border-2 border-blue-200">
+                <div class="flex items-center justify-between">
+                    <span class="text-gray-700 font-medium">Montant total</span>
+                    <span class="text-2xl font-bold text-blue-600">${montant}</span>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('booking-modal').classList.remove('hidden');
+}
+
+function getStatusClass(statut) {
+    const statusMap = {
+        '⏳ En attente': 'bg-orange-100 text-orange-700',
+        '✓ Confirmée': 'bg-green-100 text-green-700',
+        '✕ Refusée': 'bg-red-100 text-red-700',
+        '✓ Terminée': 'bg-blue-100 text-blue-700',
+        '✕ Annulée': 'bg-gray-100 text-gray-700'
+    };
+    return statusMap[statut] || 'bg-gray-100 text-gray-700';
+}
+
+function closeBookingModal() {
+    document.getElementById('booking-modal').classList.add('hidden');
+}
+
+// Fermer la modale en cliquant sur le fond
+document.getElementById('booking-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeBookingModal();
+});
+</script>
+{% endblock %}

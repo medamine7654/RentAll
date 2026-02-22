@@ -1,0 +1,370 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Signalements - RentAdmin{% endblock %}
+
+{% block search_placeholder %}Rechercher un signalement...{% endblock %}
+
+{% block body %}
+<!-- Page Header -->
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+    <div>
+        <h1 class="text-2xl font-bold text-dark font-heading">Signalements et fraude</h1>
+        <p class="text-gray-500 mt-1">Modérer les signalements et surveiller les activités suspectes</p>
+    </div>
+    <div class="flex items-center gap-2">
+        <span class="px-3 py-1 bg-red-100 text-red-700 rounded-full text-sm font-medium">{{ pending_reports_count|default(3) }} en attente</span>
+        <span class="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm font-medium">{{ critical_alerts_count|default(2) }} alertes critiques</span>
+    </div>
+</div>
+
+<!-- Critical Alerts Banner -->
+{% for alert in fraud_alerts|default([
+    { id: 'f1', type: 'cancellation_spike', userName: 'Sophie Bernard', description: 'Taux d\'annulation de 18.5% sur les 30 derniers jours (seuil: 10%)', severity: 'high', isRead: false },
+    { id: 'f4', type: 'suspicious_activity', userName: 'Jean Martin', description: 'Connexions depuis 5 pays différents en 24 heures', severity: 'high', isRead: false },
+]) %}
+    {% if alert.severity == 'high' and not alert.isRead %}
+        <div class="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3 mb-4">
+            <i class="fas fa-bell text-red-600 mt-0.5"></i>
+            <div class="flex-1">
+                <p class="font-medium text-red-800">{{ alert.type == 'cancellation_spike' ? 'Pic d\'annulations' : alert.type == 'negative_reviews' ? 'Avis négatifs' : alert.type == 'listing_spam' ? 'Spam d\'annonces' : 'Activité suspecte' }}</p>
+                <p class="text-sm text-red-700">{{ alert.description }}</p>
+                <p class="text-xs text-red-600 mt-1">Utilisateur: {{ alert.userName }}</p>
+            </div>
+            <form method="post" action="{{ path('admin_alert_mark_read', {id: alert.id}) }}" novalidate>
+                <input type="hidden" name="_token" value="{{ csrf_token('mark-read' ~ alert.id) }}">
+                <button type="submit" class="text-sm text-red-600 hover:underline">Marquer comme lu</button>
+            </form>
+        </div>
+    {% endif %}
+{% endfor %}
+
+<!-- Tabs -->
+<div class="mb-6">
+    <div class="border-b border-gray-200">
+        <nav class="flex gap-6">
+            <a href="?tab=reports" class="pb-3 text-sm font-medium {% if app.request.query.get('tab') != 'fraud' %}text-primary border-b-2 border-primary{% else %}text-gray-500 hover:text-dark{% endif %}">
+                Signalements
+                {% if pending_reports_count|default(0) > 0 %}
+                    <span class="ml-1 px-1.5 py-0.5 text-xs bg-red-500 text-white rounded-full">{{ pending_reports_count }}</span>
+                {% endif %}
+            </a>
+            <a href="?tab=fraud" class="pb-3 text-sm font-medium {% if app.request.query.get('tab') == 'fraud' %}text-primary border-b-2 border-primary{% else %}text-gray-500 hover:text-dark{% endif %}">
+                Alertes fraude
+                {% if unread_alerts_count|default(0) > 0 %}
+                    <span class="ml-1 px-1.5 py-0.5 text-xs bg-orange-500 text-white rounded-full">{{ unread_alerts_count }}</span>
+                {% endif %}
+            </a>
+        </nav>
+    </div>
+</div>
+
+{% if app.request.query.get('tab') == 'fraud' %}
+    <!-- Fraud Alerts -->
+    <div class="space-y-4">
+        {% for alert in fraud_alerts|default([
+            { id: 'f1', type: 'cancellation_spike', userId: 'u3', userName: 'Sophie Bernard', description: 'Taux d\'annulation de 18.5% sur les 30 derniers jours (seuil: 10%)', severity: 'high', createdAt: '2024-01-18', isRead: false },
+            { id: 'f2', type: 'negative_reviews', userId: 'u3', userName: 'Sophie Bernard', description: 'Note moyenne de 2.8/5 sur les 10 derniers avis (seuil: 3.5)', severity: 'medium', createdAt: '2024-01-17', isRead: false },
+            { id: 'f3', type: 'listing_spam', userId: 'u6', userName: 'Thomas Moreau', description: '15 annonces créées en 24 heures (seuil: 5)', severity: 'medium', createdAt: '2024-01-16', isRead: true },
+            { id: 'f4', type: 'suspicious_activity', userId: 'u2', userName: 'Jean Martin', description: 'Connexions depuis 5 pays différents en 24 heures', severity: 'high', createdAt: '2024-01-19', isRead: false },
+        ]) %}
+            <div class="bg-white rounded-xl shadow-sm border-l-4 {% if alert.severity == 'critical' %}border-l-red-500{% elseif alert.severity == 'high' %}border-l-orange-500{% elseif alert.severity == 'medium' %}border-l-yellow-500{% else %}border-l-blue-500{% endif %} {% if not alert.isRead %}border-l-4{% endif %}">
+                <div class="p-4">
+                    <div class="flex items-start justify-between">
+                        <div class="flex items-start gap-4">
+                            <div class="p-3 rounded-full {% if alert.severity == 'critical' %}bg-red-100{% elseif alert.severity == 'high' %}bg-orange-100{% elseif alert.severity == 'medium' %}bg-yellow-100{% else %}bg-blue-100{% endif %}">
+                                <i class="fas fa-shield-alt {% if alert.severity == 'critical' %}text-red-600{% elseif alert.severity == 'high' %}text-orange-600{% elseif alert.severity == 'medium' %}text-yellow-600{% else %}text-blue-600{% endif %}"></i>
+                            </div>
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <h4 class="font-medium">{{ alert.type == 'cancellation_spike' ? 'Pic d\'annulations' : alert.type == 'negative_reviews' ? 'Avis négatifs' : alert.type == 'listing_spam' ? 'Spam d\'annonces' : 'Activité suspecte' }}</h4>
+                                    {% if alert.severity == 'critical' %}
+                                        <span class="px-2 py-0.5 bg-red-100 text-red-700 rounded text-xs">Critique</span>
+                                    {% elseif alert.severity == 'high' %}
+                                        <span class="px-2 py-0.5 bg-orange-100 text-orange-700 rounded text-xs">Élevé</span>
+                                    {% elseif alert.severity == 'medium' %}
+                                        <span class="px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded text-xs">Moyen</span>
+                                    {% else %}
+                                        <span class="px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs">Faible</span>
+                                    {% endif %}
+                                    {% if not alert.isRead %}
+                                        <span class="px-2 py-0.5 bg-red-100 text-red-700 rounded text-xs">Nouveau</span>
+                                    {% endif %}
+                                </div>
+                                <p class="text-gray-600 mt-1">{{ alert.description }}</p>
+                                <div class="flex items-center gap-4 mt-2 text-sm text-gray-500">
+                                    <span>Utilisateur: <strong>{{ alert.userName }}</strong></span>
+                                    <span>•</span>
+                                    <span>{{ alert.createdAt|date('d/m/Y') }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            {% if not alert.isRead %}
+                                <form method="post" action="{{ path('admin_alert_mark_read', {id: alert.id}) }}" novalidate>
+                                    <input type="hidden" name="_token" value="{{ csrf_token('mark-read' ~ alert.id) }}">
+                                    <button type="submit" class="px-3 py-1.5 border border-gray-200 rounded-lg text-sm hover:bg-gray-50">Marquer comme lu</button>
+                                </form>
+                            {% endif %}
+                            <a href="{{ path('admin_user_show', {id: alert.userId}) }}" class="px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50 rounded-lg">Voir le profil</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <!-- Reports Filters -->
+    <div class="bg-white rounded-xl shadow-sm p-4 mb-6">
+        <form method="get" class="flex flex-col sm:flex-row gap-4" novalidate>
+            <input type="hidden" name="tab" value="reports">
+            <div class="relative flex-1">
+                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                <input type="text" 
+                       name="search"
+                       value="{{ app.request.query.get('search') }}"
+                       placeholder="Rechercher un signalement..."
+                       class="pl-10 w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
+            </div>
+            <select name="status" class="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                <option value="">Tous les statuts</option>
+                <option value="pending" {% if app.request.query.get('status') == 'pending' %}selected{% endif %}>En attente</option>
+                <option value="resolved" {% if app.request.query.get('status') == 'resolved' %}selected{% endif %}>Résolu</option>
+                <option value="dismissed" {% if app.request.query.get('status') == 'dismissed' %}selected{% endif %}>Rejeté</option>
+            </select>
+            <button type="submit" class="px-4 py-2 bg-primary text-white rounded-lg text-sm hover:bg-primary/90 transition-colors">
+                <i class="fas fa-filter"></i>
+            </button>
+        </form>
+    </div>
+
+    <!-- Reports Table -->
+    <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cible</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Raison</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Signalé par</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Gravité</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Statut</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    {% set reason_labels = {
+                        'inappropriate_content': 'Contenu inapproprié',
+                        'fraud': 'Fraude',
+                        'spam': 'Spam',
+                        'misrepresentation': 'Fausse description',
+                        'safety_concern': 'Problème de sécurité',
+                        'other': 'Autre'
+                    } %}
+                    {% for report in reports|default([
+                        { id: 'r1', targetType: 'service', targetId: 's3', targetName: 'Visite guidée du Louvre', reporterId: 'u2', reporterName: 'Jean Martin', reason: 'misrepresentation', description: 'Le guide ne correspondait pas à la description, manquait d\'expertise.', status: 'pending', createdAt: '2024-01-16', severity: 'high' },
+                        { id: 'r2', targetType: 'user', targetId: 'u3', targetName: 'Sophie Bernard', reporterId: 'u7', reporterName: 'Camille Leroy', reason: 'fraud', description: 'Cette utilisateur a annulé ma réservation sans raison et a gardé l\'acompte.', status: 'pending', createdAt: '2024-01-17', severity: 'critical' },
+                        { id: 'r3', targetType: 'tool', targetId: 't4', targetName: 'Scie circulaire', reporterId: 'u4', reporterName: 'Lucas Petit', reason: 'safety_concern', description: 'L\'outil était défectueux et dangereux à utiliser.', status: 'pending', createdAt: '2024-01-14', severity: 'high' },
+                        { id: 'r4', targetType: 'service', targetId: 's5', targetName: 'Massage relaxant à domicile', reporterId: 'u2', reporterName: 'Jean Martin', reason: 'inappropriate_content', description: 'Service inapproprié proposé lors du massage.', status: 'resolved', createdAt: '2024-01-10', resolvedAt: '2024-01-12', resolvedBy: 'Emma Roux', severity: 'critical' },
+                        { id: 'r5', targetType: 'user', targetId: 'u6', targetName: 'Thomas Moreau', reporterId: 'u8', reporterName: 'Nicolas Fournier', reason: 'spam', description: 'Cet hôte envoie des messages spam aux autres utilisateurs.', status: 'dismissed', createdAt: '2024-01-08', resolvedAt: '2024-01-09', resolvedBy: 'Emma Roux', severity: 'low' },
+                    ]) %}
+                        <tr class="hover:bg-gray-50 transition-colors">
+                            <td class="px-4 py-3">
+                                <div class="flex items-center gap-2">
+                                    {% if report.targetType == 'user' %}
+                                        <i class="fas fa-user text-gray-400"></i>
+                                    {% elseif report.targetType == 'service' %}
+                                        <i class="fas fa-briefcase text-gray-400"></i>
+                                    {% else %}
+                                        <i class="fas fa-wrench text-gray-400"></i>
+                                    {% endif %}
+                                    <span class="font-medium text-dark">{{ report.targetName }}</span>
+                                </div>
+                            </td>
+                            <td class="px-4 py-3">
+                                <span class="text-sm capitalize">
+                                    {% if report.targetType == 'user' %}Utilisateur
+                                    {% elseif report.targetType == 'service' %}Service
+                                    {% else %}Matériel{% endif %}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3">
+                                <span class="text-sm">{{ reason_labels[report.reason] }}</span>
+                            </td>
+                            <td class="px-4 py-3">
+                                <span class="text-sm">{{ report.reporterName }}</span>
+                            </td>
+                            <td class="px-4 py-3">
+                                {% if report.severity == 'critical' %}
+                                    <span class="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium">Critique</span>
+                                {% elseif report.severity == 'high' %}
+                                    <span class="px-2 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-medium">Élevé</span>
+                                {% elseif report.severity == 'medium' %}
+                                    <span class="px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-medium">Moyen</span>
+                                {% else %}
+                                    <span class="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">Faible</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-4 py-3">
+                                {% if report.status == 'pending' %}
+                                    <span class="px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-medium">En attente</span>
+                                {% elseif report.status == 'resolved' %}
+                                    <span class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">Résolu</span>
+                                {% else %}
+                                    <span class="px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">Rejeté</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-4 py-3 text-right">
+                                <div class="relative inline-block">
+                                    <button class="p-2 hover:bg-gray-100 rounded-lg" onclick="toggleDropdown('report-dropdown-{{ report.id }}')">
+                                        <i class="fas fa-ellipsis-h text-gray-400"></i>
+                                    </button>
+                                    <div id="report-dropdown-{{ report.id }}" class="hidden absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                                        <a href="#" onclick="openReportModal('{{ report.id }}')" class="flex items-center gap-2 px-4 py-2 text-sm text-dark hover:bg-gray-50">
+                                            <i class="fas fa-eye text-gray-400"></i>
+                                            Voir détails
+                                        </a>
+                                        {% if report.status == 'pending' %}
+                                            <form method="post" action="{{ path('admin_report_resolve', {id: report.id}) }}" class="block" novalidate>
+                                                <input type="hidden" name="_token" value="{{ csrf_token('resolve' ~ report.id) }}">
+                                                <button type="submit" class="w-full flex items-center gap-2 px-4 py-2 text-sm text-green-600 hover:bg-gray-50 text-left">
+                                                    <i class="fas fa-check-circle"></i>
+                                                    Résoudre
+                                                </button>
+                                            </form>
+                                            <form method="post" action="{{ path('admin_report_dismiss', {id: report.id}) }}" class="block" novalidate>
+                                                <input type="hidden" name="_token" value="{{ csrf_token('dismiss' ~ report.id) }}">
+                                                <button type="submit" class="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 text-left">
+                                                    <i class="fas fa-times-circle"></i>
+                                                    Rejeter
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endif %}
+
+<!-- Report Details Modal -->
+<div id="report-modal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-auto">
+        <div class="p-6 border-b border-gray-200 flex items-center justify-between">
+            <h3 class="text-xl font-semibold text-dark">Détails du signalement</h3>
+            <button onclick="closeReportModal()" class="p-2 hover:bg-gray-100 rounded-lg">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="p-6 space-y-6" id="report-modal-content">
+            <!-- Content loaded via JS -->
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+<script>
+const reportsData = {{ reports|default([
+    { id: 'r1', targetType: 'service', targetId: 's3', targetName: 'Visite guidée du Louvre', reporterId: 'u2', reporterName: 'Jean Martin', reason: 'misrepresentation', description: 'Le guide ne correspondait pas à la description, manquait d\'expertise.', status: 'pending', createdAt: '2024-01-16', severity: 'high' },
+    { id: 'r2', targetType: 'user', targetId: 'u3', targetName: 'Sophie Bernard', reporterId: 'u7', reporterName: 'Camille Leroy', reason: 'fraud', description: 'Cette utilisateur a annulé ma réservation sans raison et a gardé l\'acompte.', status: 'pending', createdAt: '2024-01-17', severity: 'critical' },
+    { id: 'r3', targetType: 'tool', targetId: 't4', targetName: 'Scie circulaire', reporterId: 'u4', reporterName: 'Lucas Petit', reason: 'safety_concern', description: 'L\'outil était défectueux et dangereux à utiliser.', status: 'pending', createdAt: '2024-01-14', severity: 'high' },
+    { id: 'r4', targetType: 'service', targetId: 's5', targetName: 'Massage relaxant à domicile', reporterId: 'u2', reporterName: 'Jean Martin', reason: 'inappropriate_content', description: 'Service inapproprié proposé lors du massage.', status: 'resolved', createdAt: '2024-01-10', resolvedAt: '2024-01-12', resolvedBy: 'Emma Roux', severity: 'critical' },
+    { id: 'r5', targetType: 'user', targetId: 'u6', targetName: 'Thomas Moreau', reporterId: 'u8', reporterName: 'Nicolas Fournier', reason: 'spam', description: 'Cet hôte envoie des messages spam aux autres utilisateurs.', status: 'dismissed', createdAt: '2024-01-08', resolvedAt: '2024-01-09', resolvedBy: 'Emma Roux', severity: 'low' },
+])|json_encode|raw }};
+
+const reasonLabels = {
+    inappropriate_content: 'Contenu inapproprié',
+    fraud: 'Fraude',
+    spam: 'Spam',
+    misrepresentation: 'Fausse description',
+    safety_concern: 'Problème de sécurité',
+    other: 'Autre'
+};
+
+const statusLabels = { pending: 'En attente', resolved: 'Résolu', dismissed: 'Rejeté' };
+const statusClass = { pending: 'bg-yellow-100 text-yellow-700', resolved: 'bg-green-100 text-green-700', dismissed: 'bg-gray-100 text-gray-700' };
+const severityClass = { critical: 'bg-red-100 text-red-700', high: 'bg-orange-100 text-orange-700', medium: 'bg-yellow-100 text-yellow-700', low: 'bg-blue-100 text-blue-700' };
+const severityLabels = { critical: 'Critique', high: 'Élevé', medium: 'Moyen', low: 'Faible' };
+
+function openReportModal(reportId) {
+    const report = reportsData.find(r => r.id === reportId);
+    if (!report) return;
+    
+    const targetTypeLabels = { user: 'Utilisateur', service: 'Service', tool: 'Matériel' };
+    
+    document.getElementById('report-modal-content').innerHTML = `
+        <div class="bg-gray-50 rounded-lg p-4">
+            <div class="flex items-center gap-3">
+                <div class="p-2 bg-gray-100 rounded-lg">
+                    <i class="fas ${report.targetType === 'user' ? 'fa-user' : report.targetType === 'service' ? 'fa-briefcase' : 'fa-wrench'}"></i>
+                </div>
+                <div>
+                    <p class="font-medium">${report.targetName}</p>
+                    <p class="text-sm text-gray-500">${targetTypeLabels[report.targetType]}</p>
+                </div>
+                <span class="ml-auto px-2 py-1 rounded-full text-xs font-medium ${severityClass[report.severity]}">${severityLabels[report.severity]}</span>
+            </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <p class="text-sm text-gray-500 mb-1">Signalé par</p>
+                <p class="font-medium">${report.reporterName}</p>
+            </div>
+            <div>
+                <p class="text-sm text-gray-500 mb-1">Date du signalement</p>
+                <p class="font-medium">${new Date(report.createdAt).toLocaleDateString('fr-FR')}</p>
+            </div>
+            <div>
+                <p class="text-sm text-gray-500 mb-1">Raison</p>
+                <p class="font-medium">${reasonLabels[report.reason]}</p>
+            </div>
+            <div>
+                <p class="text-sm text-gray-500 mb-1">Statut</p>
+                <span class="px-2 py-1 rounded-full text-xs font-medium ${statusClass[report.status]}">${statusLabels[report.status]}</span>
+            </div>
+        </div>
+        <div>
+            <p class="text-sm text-gray-500 mb-2">Description</p>
+            <div class="bg-gray-50 rounded-lg p-4">
+                <p class="text-gray-700">${report.description}</p>
+            </div>
+        </div>
+        ${report.status !== 'pending' ? `
+        <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+            <p class="font-medium text-green-800">Résolution</p>
+            <p class="text-sm text-green-700">${report.status === 'resolved' ? 'Signalement résolu' : 'Signalement rejeté'}</p>
+            ${report.resolvedAt ? `<p class="text-sm text-green-600 mt-1">Le ${new Date(report.resolvedAt).toLocaleDateString('fr-FR')} par ${report.resolvedBy}</p>` : ''}
+        </div>
+        ` : `
+        <div class="flex gap-2">
+            <form method="post" action="/admin/reports/${report.id}/dismiss" class="flex-1" novalidate>
+                <button type="submit" class="w-full px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50">
+                    <i class="fas fa-times-circle mr-2"></i>Rejeter
+                </button>
+            </form>
+            <form method="post" action="/admin/reports/${report.id}/resolve" class="flex-1" novalidate>
+                <button type="submit" class="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                    <i class="fas fa-check-circle mr-2"></i>Résoudre
+                </button>
+            </form>
+        </div>
+        `}
+    `;
+    
+    document.getElementById('report-modal').classList.remove('hidden');
+}
+
+function closeReportModal() {
+    document.getElementById('report-modal').classList.add('hidden');
+}
+
+document.getElementById('report-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeReportModal();
+});
+</script>
+{% endblock %}

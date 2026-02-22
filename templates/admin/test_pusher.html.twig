@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Pusher Debug</title>
+</head>
+<body>
+    <h1>Pusher Configuration Debug</h1>
+    
+    <h2>Twig Globals:</h2>
+    <pre>
+pusher_key: {{ pusher_key|default('NOT SET') }}
+pusher_cluster: {{ pusher_cluster|default('NOT SET') }}
+    </pre>
+    
+    <h2>JavaScript Test:</h2>
+    <div id="output"></div>
+    
+    <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
+    <script>
+        const output = document.getElementById('output');
+        
+        const key = '{{ pusher_key|default('') }}';
+        const cluster = '{{ pusher_cluster|default('eu') }}';
+        
+        output.innerHTML += '<p>Key from Twig: ' + (key || 'EMPTY') + '</p>';
+        output.innerHTML += '<p>Cluster from Twig: ' + cluster + '</p>';
+        
+        if (key && key !== '') {
+            try {
+                output.innerHTML += '<p>Initializing Pusher...</p>';
+                const pusher = new Pusher(key, {
+                    cluster: cluster
+                });
+                
+                pusher.connection.bind('connected', function() {
+                    output.innerHTML += '<p style="color: green;">✅ Pusher connected successfully!</p>';
+                });
+                
+                pusher.connection.bind('error', function(err) {
+                    output.innerHTML += '<p style="color: red;">❌ Pusher error: ' + JSON.stringify(err) + '</p>';
+                });
+                
+                const channel = pusher.subscribe('admin-channel');
+                
+                channel.bind('pusher:subscription_succeeded', function() {
+                    output.innerHTML += '<p style="color: green;">✅ Subscribed to admin-channel</p>';
+                });
+                
+                channel.bind('test-event', function(data) {
+                    output.innerHTML += '<p style="color: blue;">📬 Received test event: ' + JSON.stringify(data) + '</p>';
+                });
+                
+                channel.bind('new-reservation', function(data) {
+                    output.innerHTML += '<p style="color: blue;">📬 Received reservation: ' + JSON.stringify(data) + '</p>';
+                });
+                
+            } catch (error) {
+                output.innerHTML += '<p style="color: red;">❌ Error: ' + error.message + '</p>';
+            }
+        } else {
+            output.innerHTML += '<p style="color: red;">❌ Pusher key is empty!</p>';
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,166 @@
+{% extends 'front/base.html.twig' %}
+
+{% block title %}Modifier {{ logement.titre }} - RentAll{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+{% endblock %}
+
+{% block body %}
+<div class="min-h-screen bg-gray-50 py-8">
+    <div class="container mx-auto px-4">
+        <div class="max-w-3xl mx-auto">
+            <div class="mb-8">
+                <h1 class="text-4xl font-bold text-gray-900 mb-2">Modifier le logement</h1>
+                <p class="text-gray-600">{{ logement.titre }}</p>
+            </div>
+
+            {# Messages flash #}
+            {% for message in app.flashes('success') %}
+                <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+                    {{ message }}
+                </div>
+            {% endfor %}
+            {% for message in app.flashes('error') %}
+                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                    {{ message }}
+                </div>
+            {% endfor %}
+
+            <div class="bg-white rounded-xl shadow-lg p-8">
+                {{ form_start(form, {'attr': {'data-turbo': 'false', 'novalidate': 'novalidate'}}) }}
+                    <div class="space-y-6">
+                        <div>
+                            {{ form_label(form.titre, null, {'label_attr': {'class': 'block text-sm font-semibold text-gray-700 mb-2'}}) }}
+                            {{ form_widget(form.titre) }}
+                            {% if form.titre.vars.errors|length > 0 %}
+                                <div class="text-red-600 text-sm mt-1">
+                                    {{ form_errors(form.titre) }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div>
+                            {{ form_label(form.description, null, {'label_attr': {'class': 'block text-sm font-semibold text-gray-700 mb-2'}}) }}
+                            {{ form_widget(form.description) }}
+                            {% if form.description.vars.errors|length > 0 %}
+                                <div class="text-red-600 text-sm mt-1">
+                                    {{ form_errors(form.description) }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div>
+                            {{ form_label(form.adresse, 'Adresse', {'label_attr': {'class': 'block text-sm font-semibold text-gray-700 mb-2'}}) }}
+                            {{ form_widget(form.adresse, {'attr': {'id': 'logement_adresse', 'placeholder': 'Cliquez sur la carte ou saisissez l\'adresse'}}) }}
+                            {% if form.adresse.vars.errors|length > 0 %}
+                                <div class="text-red-600 text-sm mt-1">
+                                    {{ form_errors(form.adresse) }}
+                                </div>
+                            {% endif %}
+                            <p class="text-sm text-gray-500 mt-1">💡 Cliquez sur la carte pour sélectionner automatiquement</p>
+                            
+                            {# Map Section #}
+                            <div class="mt-4 p-4 bg-gray-50 rounded-lg border-2 border-gray-200">
+                                <div class="flex items-center justify-between mb-3">
+                                    <h3 class="text-sm font-semibold text-gray-700">Sélectionner sur la carte</h3>
+                                    <span class="text-xs text-gray-500">Cliquez pour placer le marqueur</span>
+                                </div>
+                                <div id="logement-map" style="height: 350px; border-radius: 0.5rem; border: 2px solid #e5e7eb;"></div>
+                            </div>
+                        </div>
+
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div>
+                                {{ form_label(form.prixParNuit, null, {'label_attr': {'class': 'block text-sm font-semibold text-gray-700 mb-2'}}) }}
+                                {{ form_widget(form.prixParNuit) }}
+                                {% if form.prixParNuit.vars.errors|length > 0 %}
+                                    <div class="text-red-600 text-sm mt-1">
+                                        {{ form_errors(form.prixParNuit) }}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div>
+                                {{ form_label(form.type, null, {'label_attr': {'class': 'block text-sm font-semibold text-gray-700 mb-2'}}) }}
+                                {{ form_widget(form.type) }}
+                                {% if form.type.vars.errors|length > 0 %}
+                                    <div class="text-red-600 text-sm mt-1">
+                                        {{ form_errors(form.type) }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div>
+                                {{ form_label(form.nombreChambres, null, {'label_attr': {'class': 'block text-sm font-semibold text-gray-700 mb-2'}}) }}
+                                {{ form_widget(form.nombreChambres) }}
+                                {% if form.nombreChambres.vars.errors|length > 0 %}
+                                    <div class="text-red-600 text-sm mt-1">
+                                        {{ form_errors(form.nombreChambres) }}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div>
+                                {{ form_label(form.capacite, null, {'label_attr': {'class': 'block text-sm font-semibold text-gray-700 mb-2'}}) }}
+                                {{ form_widget(form.capacite) }}
+                                {% if form.capacite.vars.errors|length > 0 %}
+                                    <div class="text-red-600 text-sm mt-1">
+                                        {{ form_errors(form.capacite) }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div>
+                            {{ form_label(form.image, null, {'label_attr': {'class': 'block text-sm font-semibold text-gray-700 mb-2'}}) }}
+                            {{ form_widget(form.image) }}
+                            {% if form.image.vars.errors|length > 0 %}
+                                <div class="text-red-600 text-sm mt-1">
+                                    {{ form_errors(form.image) }}
+                                </div>
+                            {% endif %}
+                            <p class="text-sm text-gray-500 mt-1">URL d'une image (optionnel)</p>
+                        </div>
+
+                        <div class="flex gap-4 pt-4">
+                            <button type="submit" class="flex-1 bg-blue-600 text-white py-4 rounded-lg hover:bg-blue-700 font-bold text-lg shadow-lg transition">
+                                Enregistrer les modifications
+                            </button>
+                            <a href="{{ path('host_logements') }}" 
+                               class="flex-1 bg-gray-200 text-gray-800 py-4 rounded-lg hover:bg-gray-300 font-semibold text-center flex items-center justify-center transition">
+                                Annuler
+                            </a>
+                        </div>
+                    </div>
+                {{ form_end(form) }}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" data-turbo-track="reload"></script>
+    <script src="{{ asset('js/leaflet-logement.js') }}" data-turbo-track="reload"></script>
+    <script>
+        let logementMap;
+        document.addEventListener('DOMContentLoaded', function() {
+            logementMap = new window.LeafletLogementMap('logement-map', {
+                defaultCenter: [46.603354, 1.888334], // Center of France
+                defaultZoom: 6,
+                inputId: 'logement_adresse'
+            });
+            
+            // Pre-load existing address on edit page
+            const existingAddress = {{ logement.adresse|json_encode|raw }};
+            if (existingAddress) {
+                logementMap.displayExistingLocation(existingAddress);
+            }
+        });
+    </script>
+{% endblock %}

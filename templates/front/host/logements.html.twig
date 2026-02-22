@@ -1,0 +1,104 @@
+{% extends 'front/base.html.twig' %}
+
+{% block title %}Mes Logements - RentAll{% endblock %}
+
+{% block body %}
+<div class="min-h-screen bg-gray-50 py-8">
+    <div class="container mx-auto px-4">
+        <div class="flex justify-between items-center mb-8">
+            <div>
+                <h1 class="text-4xl font-bold text-gray-900 mb-2">Mes Logements</h1>
+                <p class="text-gray-600">Gérez vos annonces</p>
+            </div>
+            <a href="{{ path('host_logement_new') }}" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 font-semibold shadow-lg transition">
+                <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                </svg>
+                Ajouter un logement
+            </a>
+        </div>
+
+        {% if logements|length > 0 %}
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {% for logement in logements %}
+                    <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                        {% if logement.image %}
+                            <img src="{{ logement.image }}" class="w-full h-48 object-cover" alt="{{ logement.titre }}">
+                        {% else %}
+                            <div class="w-full h-48 bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
+                                <svg class="w-16 h-16 text-white opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                                </svg>
+                            </div>
+                        {% endif %}
+
+                        <div class="p-6">
+                            <div class="flex items-start justify-between mb-3">
+                                <h3 class="text-xl font-bold text-gray-900">{{ logement.titre }}</h3>
+                                {% if logement.disponible %}
+                                    <span class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">Actif</span>
+                                {% else %}
+                                    <span class="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium">Inactif</span>
+                                {% endif %}
+                            </div>
+
+                            <p class="text-gray-600 text-sm mb-4 line-clamp-2">{{ logement.description }}</p>
+
+                            <div class="flex items-center text-sm text-gray-600 mb-4">
+                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                                </svg>
+                                {{ logement.adresse }}
+                            </div>
+
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="text-2xl font-bold text-gray-900">{{ logement.prixParNuit }}€</span>
+                                <span class="text-gray-600 text-sm">/ nuit</span>
+                            </div>
+
+                            <div class="flex gap-2 text-sm text-gray-600 mb-4">
+                                <span class="bg-gray-100 px-2 py-1 rounded">{{ logement.nombreChambres }} ch.</span>
+                                <span class="bg-gray-100 px-2 py-1 rounded">{{ logement.capacite }} pers.</span>
+                                {% if logement.type %}
+                                    <span class="bg-gray-100 px-2 py-1 rounded">{{ logement.type }}</span>
+                                {% endif %}
+                            </div>
+
+                            <div class="flex gap-2">
+                                <a href="{{ path('host_logement_edit', {id: logement.id}) }}" 
+                                   class="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 text-center text-sm font-semibold transition">
+                                    Modifier
+                                </a>
+                                <form method="post" action="{{ path('host_logement_toggle', {id: logement.id}) }}" class="flex-1">
+                                    <button type="submit" 
+                                            class="w-full {% if logement.disponible %}bg-red-600 hover:bg-red-700{% else %}bg-green-600 hover:bg-green-700{% endif %} text-white py-2 rounded-lg text-sm font-semibold transition">
+                                        {% if logement.disponible %}Désactiver{% else %}Activer{% endif %}
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="bg-white rounded-xl shadow-lg p-12">
+                <div class="flex flex-col items-center justify-center text-center">
+                    <div class="rounded-full bg-gray-100 p-8 mb-6">
+                        <svg class="h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-2xl font-bold text-gray-900 mb-2">Aucun logement</h3>
+                    <p class="text-gray-600 mb-6">
+                        Commencez par créer votre première annonce
+                    </p>
+                    <a href="{{ path('host_logement_new') }}"
+                       class="inline-flex items-center px-6 py-3 rounded-lg bg-blue-600 text-white hover:bg-blue-700 font-semibold text-lg shadow-lg">
+                        Créer un logement
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

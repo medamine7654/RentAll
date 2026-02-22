@@ -1,0 +1,161 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}My Reservations - RentAll{% endblock %}
+
+{% block body %}
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold text-gray-900 mb-8">My Reservations</h1>
+
+    {% if reservations|length > 0 %}
+        {# Tabs for filtering reservations #}
+        <div class="mb-6 border-b border-gray-200">
+            <nav class="-mb-px flex space-x-8">
+                <a 
+                    href="{{ path('app_reservations') }}"
+                    class="{% if not status or status == 'all' %}border-blue-600 text-blue-600{% else %}border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300{% endif %} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm"
+                >
+                    All
+                </a>
+                <a 
+                    href="{{ path('app_reservations', {status: 'confirmed'}) }}"
+                    class="{% if status == 'confirmed' %}border-blue-600 text-blue-600{% else %}border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300{% endif %} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm"
+                >
+                    Upcoming
+                </a>
+                <a 
+                    href="{{ path('app_reservations', {status: 'completed'}) }}"
+                    class="{% if status == 'completed' %}border-blue-600 text-blue-600{% else %}border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300{% endif %} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm"
+                >
+                    Past
+                </a>
+                <a 
+                    href="{{ path('app_reservations', {status: 'cancelled'}) }}"
+                    class="{% if status == 'cancelled' %}border-blue-600 text-blue-600{% else %}border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300{% endif %} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm"
+                >
+                    Cancelled
+                </a>
+            </nav>
+        </div>
+
+        {# Reservations list #}
+        <div class="space-y-4">
+            {% for reservation in reservations %}
+                {% set item = reservation.type == 'logement' ? logements[reservation.itemId] : tools[reservation.itemId] %}
+                {% set host = hosts[reservation.hostId] %}
+                
+                <div class="rounded-lg border border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow">
+                    <div class="p-6">
+                        <div class="flex gap-6">
+                            {# Item image #}
+                            <div class="flex-shrink-0">
+                                <img 
+                                    src="{{ item.images[0] ?? asset('placeholder.svg') }}" 
+                                    alt="{{ item.title ?? item.name }}"
+                                    class="h-32 w-32 rounded-lg object-cover"
+                                >
+                            </div>
+
+                            {# Reservation details #}
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-start justify-between">
+                                    <div class="flex-1">
+                                        <h3 class="text-lg font-semibold text-gray-900">
+                                            {{ item.title ?? item.name }}
+                                        </h3>
+                                        <p class="text-sm text-gray-500 mt-1">
+                                            {% if reservation.type == 'logement' %}
+                                                {{ item.location }} • {{ item.category|capitalize }}
+                                            {% else %}
+                                                {{ item.category|replace({'-': ' '})|title }}
+                                            {% endif %}
+                                        </p>
+                                        <p class="text-sm text-gray-500">
+                                            Hosted by {{ host ? host.name : 'Unknown' }}
+                                        </p>
+                                    </div>
+                                    
+                                    {# Status badge #}
+                                    {% import 'components/ui_macros.html.twig' as ui %}
+                                    <div>
+                                        {% if reservation.status == 'confirmed' %}
+                                            {{ ui.badge('Confirmed', 'success') }}
+                                        {% elseif reservation.status == 'completed' %}
+                                            {{ ui.badge('Completed', 'default') }}
+                                        {% elseif reservation.status == 'cancelled' %}
+                                            {{ ui.badge('Cancelled', 'danger') }}
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                {# Dates and price #}
+                                <div class="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                    <div>
+                                        <p class="text-xs text-gray-500">Check-in</p>
+                                        <p class="text-sm font-medium text-gray-900">{{ reservation.startDate|date('M d, Y') }}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-gray-500">Check-out</p>
+                                        <p class="text-sm font-medium text-gray-900">{{ reservation.endDate|date('M d, Y') }}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-gray-500">Total Price</p>
+                                        <p class="text-sm font-medium text-gray-900">${{ reservation.totalPrice }}</p>
+                                    </div>
+                                </div>
+
+                                {# Actions #}
+                                <div class="mt-4 flex gap-3">
+                                    <a 
+                                        href="{{ path(reservation.type == 'logement' ? 'app_logement_show' : 'app_tool_show', {id: reservation.itemId}) }}"
+                                        class="text-sm font-medium text-blue-600 hover:text-blue-700"
+                                    >
+                                        View Details
+                                    </a>
+                                    {% if reservation.status == 'confirmed' %}
+                                        <a 
+                                            href="{{ path('app_reservation_cancel', {id: reservation.id}) }}"
+                                            class="text-sm font-medium text-red-600 hover:text-red-700"
+                                            onclick="return confirm('Are you sure you want to cancel this reservation?')"
+                                        >
+                                            Cancel Reservation
+                                        </a>
+                                    {% endif %}
+                                    {% if reservation.status == 'completed' %}
+                                        <a 
+                                            href="{{ path('app_review_create', {reservationId: reservation.id}) }}"
+                                            class="text-sm font-medium text-blue-600 hover:text-blue-700"
+                                        >
+                                            Write Review
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        {# Empty state #}
+        <div class="flex flex-col items-center justify-center py-12 text-center">
+            <div class="rounded-full bg-gray-100 p-6">
+                <svg class="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                </svg>
+            </div>
+            <h3 class="mt-4 text-lg font-medium text-gray-900">No reservations yet</h3>
+            <p class="mt-1 text-gray-600">
+                Start exploring and book your first stay or tool rental
+            </p>
+            <div class="mt-6">
+                <a 
+                    href="{{ path('app_home') }}"
+                    class="inline-flex items-center px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 font-medium text-sm"
+                >
+                    Explore Stays
+                </a>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

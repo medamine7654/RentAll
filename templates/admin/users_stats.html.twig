@@ -1,0 +1,52 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Statistiques Utilisateurs{% endblock %}
+
+{% block body %}
+<div class="flex items-center justify-between mb-6">
+    <div>
+        <h1 class="text-2xl font-bold text-dark font-heading">Statistiques Utilisateurs</h1>
+        <p class="text-gray-500 mt-1">Vue globale des comptes de la plateforme</p>
+    </div>
+    <a href="{{ path('admin_users') }}" class="px-3 py-2 border border-gray-200 rounded-lg text-sm hover:bg-gray-50">Retour a la liste</a>
+</div>
+
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div class="bg-white rounded-xl shadow-sm p-5">
+        <p class="text-sm text-gray-500">Utilisateurs totaux</p>
+        <p class="text-3xl font-bold text-dark mt-2">{{ stats.total }}</p>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm p-5">
+        <p class="text-sm text-gray-500">Comptes actifs</p>
+        <p class="text-3xl font-bold text-green-700 mt-2">{{ stats.active }}</p>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm p-5">
+        <p class="text-sm text-gray-500">Comptes inactifs</p>
+        <p class="text-3xl font-bold text-red-700 mt-2">{{ stats.inactive }}</p>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm p-5">
+        <p class="text-sm text-gray-500">Comptes suspendus</p>
+        <p class="text-3xl font-bold text-orange-700 mt-2">{{ stats.suspended|default(0) }}</p>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm p-5">
+        <p class="text-sm text-gray-500">Comptes bannis</p>
+        <p class="text-3xl font-bold text-red-800 mt-2">{{ stats.banned|default(0) }}</p>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm p-5">
+        <p class="text-sm text-gray-500">Comptes suspects</p>
+        <p class="text-3xl font-bold text-yellow-700 mt-2">{{ stats.flagged|default(0) }}</p>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm p-5">
+        <p class="text-sm text-gray-500">Administrateurs</p>
+        <p class="text-3xl font-bold text-dark mt-2">{{ stats.admins }}</p>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm p-5">
+        <p class="text-sm text-gray-500">Hotes</p>
+        <p class="text-3xl font-bold text-dark mt-2">{{ stats.hosts }}</p>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm p-5">
+        <p class="text-sm text-gray-500">Voyageurs</p>
+        <p class="text-3xl font-bold text-dark mt-2">{{ stats.guests }}</p>
+    </div>
+</div>
+{% endblock %}

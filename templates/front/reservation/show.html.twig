@@ -1,0 +1,331 @@
+{% extends 'front/base.html.twig' %}
+
+{% block title %}Réservation #{{ reservation.id }} - RentAll{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+{% endblock %}
+
+{% block body %}
+<div class="min-h-screen bg-gray-50 py-12">
+    <div class="container mx-auto px-4">
+        <div class="max-w-4xl mx-auto">
+            {# En-tête avec statut #}
+            <div class="bg-white rounded-xl shadow-lg p-8 mb-6">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h1 class="text-3xl font-bold text-gray-900 mb-2">Réservation confirmée</h1>
+                        <p class="text-gray-600">Numéro de réservation : #{{ reservation.id }}</p>
+                    </div>
+                    <div>
+                        {% if reservation.statut == 'confirmee' %}
+                            <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold bg-green-100 text-green-800">
+                                <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                </svg>
+                                Confirmée
+                            </span>
+                        {% elseif reservation.statut == 'en_attente' %}
+                            <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold bg-yellow-100 text-yellow-800">
+                                <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path>
+                                </svg>
+                                En attente
+                            </span>
+                        {% elseif reservation.statut == 'annulee' %}
+                            <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold bg-red-100 text-red-800">
+                                <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                                </svg>
+                                Annulée
+                            </span>
+                        {% else %}
+                            <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold bg-gray-100 text-gray-800">
+                                {{ reservation.statut|capitalize }}
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {# Message de succès #}
+                <div class="bg-green-50 border-l-4 border-green-500 p-4 rounded-lg">
+                    <div class="flex">
+                        <svg class="w-6 h-6 text-green-500 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <div>
+                            <p class="font-semibold text-green-900">Votre réservation a été confirmée !</p>
+                            <p class="text-sm text-green-800 mt-1">Un email de confirmation a été envoyé à votre adresse.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {# Détails du logement #}
+            <div class="bg-white rounded-xl shadow-lg p-8 mb-6">
+                <h2 class="text-2xl font-bold text-gray-900 mb-6">Détails du logement</h2>
+                
+                <div class="flex gap-6">
+                    {# Image #}
+                    <div class="flex-shrink-0">
+                        {% if reservation.logement.image %}
+                            <img src="{{ reservation.logement.image }}" 
+                                 class="w-48 h-32 object-cover rounded-lg" 
+                                 alt="{{ reservation.logement.titre }}">
+                        {% else %}
+                            <div class="w-48 h-32 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg flex items-center justify-center">
+                                <svg class="w-12 h-12 text-white opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                                </svg>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    {# Informations #}
+                    <div class="flex-1">
+                        <h3 class="text-xl font-bold text-gray-900 mb-2">{{ reservation.logement.titre }}</h3>
+                        <p class="text-gray-600 mb-3">
+                            <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            </svg>
+                            {{ reservation.logement.adresse }}
+                        </p>
+                        <div class="flex gap-4 text-sm text-gray-600">
+                            <span class="inline-flex items-center">
+                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                                </svg>
+                                {{ reservation.logement.nombreChambres }} chambre{{ reservation.logement.nombreChambres > 1 ? 's' : '' }}
+                            </span>
+                            {% if reservation.logement.capacite %}
+                                <span class="inline-flex items-center">
+                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                    </svg>
+                                    {{ reservation.logement.capacite }} voyageurs
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                {# Carte pour afficher l'adresse #}
+                <div class="mt-6">
+                    <button type="button" 
+                            onclick="toggleReservationMap()" 
+                            class="w-full px-4 py-3 text-sm font-medium text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-lg hover:bg-indigo-100 flex items-center justify-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path>
+                        </svg>
+                        Voir l'emplacement sur la carte
+                    </button>
+                    <div id="reservation-map" class="hidden mt-4 rounded-lg border-2 border-indigo-200" style="height: 350px;"></div>
+                </div>
+            </div>
+
+            {# Détails de la réservation #}
+            <div class="bg-white rounded-xl shadow-lg p-8 mb-6">
+                <h2 class="text-2xl font-bold text-gray-900 mb-6">Détails de votre séjour</h2>
+                
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div class="border border-gray-200 rounded-lg p-4">
+                        <p class="text-sm text-gray-600 mb-1">Date d'arrivée</p>
+                        <p class="text-lg font-bold text-gray-900">{{ reservation.dateDebut|date('d/m/Y') }}</p>
+                        <p class="text-sm text-gray-600">À partir de 15h00</p>
+                    </div>
+
+                    <div class="border border-gray-200 rounded-lg p-4">
+                        <p class="text-sm text-gray-600 mb-1">Date de départ</p>
+                        <p class="text-lg font-bold text-gray-900">{{ reservation.dateFin|date('d/m/Y') }}</p>
+                        <p class="text-sm text-gray-600">Avant 11h00</p>
+                    </div>
+                </div>
+
+                <div class="mt-6 pt-6 border-t border-gray-200">
+                    <div class="flex justify-between items-center mb-3">
+                        <span class="text-gray-600">{{ reservation.nombreNuits }} nuit{{ reservation.nombreNuits > 1 ? 's' : '' }} × {{ reservation.logement.prixParNuit }}€</span>
+                        <span class="font-semibold text-gray-900">{{ reservation.montantTotal }}€</span>
+                    </div>
+                    <div class="flex justify-between items-center mb-3">
+                        <span class="text-gray-600">Frais de service</span>
+                        <span class="font-semibold text-gray-900">0€</span>
+                    </div>
+                    <div class="border-t border-gray-200 pt-3 flex justify-between items-center">
+                        <span class="text-xl font-bold text-gray-900">Total</span>
+                        <span class="text-2xl font-bold text-blue-600">{{ reservation.montantTotal }}€</span>
+                    </div>
+                </div>
+            </div>
+
+            {# Politique d'annulation #}
+            {% if reservation.statut == 'confirmee' %}
+                <div class="bg-white rounded-xl shadow-lg p-8 mb-6">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-4">Politique d'annulation</h2>
+                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                        <p class="text-yellow-900">
+                            <svg class="w-5 h-5 inline mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                            </svg>
+                            Vous pouvez annuler gratuitement jusqu'à <strong>3 jours avant la date d'arrivée</strong>.
+                        </p>
+                    </div>
+
+                    {% if reservation.peutEtreAnnulee %}
+                        <form method="post" action="{{ path('app_reservation_cancel', {id: reservation.id}) }}" onsubmit="return confirm('Êtes-vous sûr de vouloir annuler cette réservation ?');">
+                            <button type="submit" class="w-full bg-red-600 text-white py-3 rounded-lg hover:bg-red-700 transition font-semibold">
+                                Annuler la réservation
+                            </button>
+                        </form>
+                    {% else %}
+                        <div class="bg-gray-100 text-gray-600 py-3 rounded-lg text-center">
+                            Cette réservation ne peut plus être annulée (moins de 3 jours avant l'arrivée)
+                        </div>
+                    {% endif %}
+                </div>
+            {% endif %}
+
+            {# Avis section #}
+            {# Section Avis - Affichée si réservation confirmée #}
+            {% if reservation.statut == 'confirmee' %}
+                <div class="bg-white rounded-xl shadow-lg p-8 mb-6">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-4">Votre avis</h2>
+                    
+                    {% if reservation.avis %}
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-6">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="flex items-center">
+                                    <span class="text-2xl font-bold text-blue-600 mr-2">{{ reservation.avis.note }}/5</span>
+                                    <span class="text-yellow-400 text-xl">
+                                        {% for i in 1..5 %}
+                                            {% if i <= reservation.avis.note %}⭐{% endif %}
+                                        {% endfor %}
+                                    </span>
+                                </div>
+                                <div class="flex gap-2">
+                                    <a href="{{ path('app_avis_edit', {id: reservation.avis.id}) }}" 
+                                       class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition text-sm font-semibold">
+                                        <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                        </svg>
+                                        Modifier
+                                    </a>
+                                    <form method="post" action="{{ path('app_avis_delete', {id: reservation.avis.id}) }}" 
+                                          onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cet avis ?');" 
+                                          style="display: inline;">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ reservation.avis.id) }}">
+                                        <button type="submit" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition text-sm font-semibold">
+                                            <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                            </svg>
+                                            Supprimer
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                            <p class="text-gray-700 mb-2">{{ reservation.avis.commentaire }}</p>
+                            <p class="text-sm text-gray-500">Publié le {{ reservation.avis.dateCreation|date('d/m/Y') }}</p>
+                        </div>
+                    {% else %}
+                        <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
+                            {% if reservation.isTerminee %}
+                                <p class="text-gray-700 mb-4">Votre séjour est terminé. Partagez votre expérience !</p>
+                            {% else %}
+                                <p class="text-gray-700 mb-4">Votre réservation est confirmée. Vous pouvez déjà laisser un avis !</p>
+                            {% endif %}
+                            <a href="{{ path('app_avis_new', {id: reservation.id}) }}" 
+                               class="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition font-semibold">
+                                <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
+                                </svg>
+                                Laisser un avis
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            {% endif %}
+
+            {# Actions #}
+            <div class="flex gap-4">
+                <a href="{{ path('app_reservation_pdf', {id: reservation.id}) }}" 
+                   class="flex-1 bg-red-600 text-white py-4 rounded-lg hover:bg-red-700 transition font-semibold text-center text-lg shadow-lg">
+                    <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    Télécharger PDF
+                </a>
+                <a href="{{ path('app_reservation_index') }}" 
+                   class="flex-1 bg-blue-600 text-white py-4 rounded-lg hover:bg-blue-700 transition font-semibold text-center text-lg shadow-lg">
+                    Voir mes réservations
+                </a>
+                <a href="{{ path('app_home') }}" 
+                   class="flex-1 bg-gray-200 text-gray-800 py-4 rounded-lg hover:bg-gray-300 transition font-semibold text-center text-lg">
+                    Retour à l'accueil
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" data-turbo-track="reload"></script>
+    <script src="{{ asset('js/leaflet-map.js') }}" data-turbo-track="reload"></script>
+    <script>
+        let reservationMapManager = null;
+        
+        function toggleReservationMap() {
+            const mapDiv = document.getElementById('reservation-map');
+            
+            if (mapDiv.classList.contains('hidden')) {
+                mapDiv.classList.remove('hidden');
+                
+                // Initialize map if not already done
+                if (!reservationMapManager) {
+                    reservationMapManager = new window.LeafletMapManager('reservation-map', {
+                        defaultCenter: [46.603354, 1.888334],
+                        defaultZoom: 13,
+                        autoSwitch: false
+                    });
+                    
+                    // Display logement location
+                    const address = '{{ reservation.logement.adresse|e('js') }}';
+                    if (address) {
+                        // Geocode and display single marker
+                        reservationMapManager.geocode(address).then(coords => {
+                            if (coords) {
+                                // Create blue marker for logement
+                                const blueIcon = L.icon({
+                                    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+                                    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+                                    iconSize: [25, 41],
+                                    iconAnchor: [12, 41],
+                                    popupAnchor: [1, -34],
+                                    shadowSize: [41, 41]
+                                });
+                                
+                                L.marker([coords.lat, coords.lng], { icon: blueIcon })
+                                    .addTo(reservationMapManager.map)
+                                    .bindPopup(`<b>{{ reservation.logement.titre|e('js') }}</b><br>${address}`)
+                                    .openPopup();
+                                
+                                reservationMapManager.map.setView([coords.lat, coords.lng], 15);
+                            }
+                        }).catch(error => {
+                            console.error('Geocoding error:', error);
+                        });
+                    }
+                    
+                    // Force map to recalculate size
+                    setTimeout(() => {
+                        reservationMapManager.map.invalidateSize();
+                    }, 100);
+                }
+            } else {
+                mapDiv.classList.add('hidden');
+            }
+        }
+    </script>
+{% endblock %}

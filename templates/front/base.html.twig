@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="turbo-prefetch" content="false">
+    <meta name="description" content="{% block meta_description %}DÃ©couvrez des logements uniques, louez des outils et rÃ©servez des services. Votre marketplace de location tout-en-un.{% endblock %}">
+    <meta name="generator" content="Symfony">
+    <script>
+        (function () {
+            var key = 'rentall-theme';
+            window.toggleRentallTheme = function () {
+                var dark = document.documentElement.classList.toggle('theme-dark');
+                var value = dark ? 'dark' : 'light';
+                document.documentElement.setAttribute('data-theme', value);
+                try { localStorage.setItem(key, value); } catch (e) {}
+                document.querySelectorAll('[data-theme-label]').forEach(function (el) {
+                    el.textContent = dark ? 'Mode clair' : 'Mode sombre';
+                });
+                document.querySelectorAll('[data-theme-icon]').forEach(function (el) {
+                    el.textContent = dark ? 'LIGHT' : 'DARK';
+                });
+            };
+            try {
+                var saved = localStorage.getItem(key);
+                if (!saved) {
+                    saved = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+                }
+                if (saved === 'dark') {
+                    document.documentElement.classList.add('theme-dark');
+                }
+                document.documentElement.setAttribute('data-theme', saved);
+            } catch (e) {}
+        })();
+    </script>
+    
+    <title>{% block title %}RentAll - Logements, Outils & Services{% endblock %}</title>
+    
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>ðŸ </text></svg>">
+    
+    {% block stylesheets %}
+        <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+        <style>
+            /* Professional Enhancements */
+            body {
+                background: linear-gradient(to bottom, #f8fafc 0%, #ffffff 100%);
+            }
+            
+            .hero-gradient {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                position: relative;
+                overflow: hidden;
+            }
+            
+            .hero-gradient::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+                opacity: 0.1;
+            }
+            
+            .card-hover {
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+            
+            .card-hover:hover {
+                transform: translateY(-8px);
+                box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            }
+            
+            .btn-gradient {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                box-shadow: 0 4px 15px 0 rgba(102, 126, 234, 0.4);
+                position: relative;
+                overflow: hidden;
+            }
+            
+            .btn-gradient::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+                transform: translateX(-100%);
+                transition: transform 0.6s;
+            }
+            
+            .btn-gradient:hover::before {
+                transform: translateX(100%);
+            }
+            
+            .btn-gradient:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 6px 20px 0 rgba(102, 126, 234, 0.5);
+            }
+            
+            .glass-effect {
+                background: rgba(255, 255, 255, 0.95);
+                backdrop-filter: blur(10px);
+                -webkit-backdrop-filter: blur(10px);
+            }
+            
+            .text-gradient {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                background-clip: text;
+            }
+            
+            @keyframes fadeInUp {
+                from {
+                    opacity: 0;
+                    transform: translateY(30px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+            
+            .animate-fade-in-up {
+                animation: fadeInUp 0.6s ease-out forwards;
+                opacity: 0;
+            }
+            
+            .search-box-shadow {
+                box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            }
+            
+            .search-box-shadow:focus-within {
+                box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1), 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            }
+        </style>
+    {% endblock %}
+    <style>
+        html.theme-dark body {
+            background: linear-gradient(180deg, #0b1220 0%, #111827 100%) !important;
+            color: #e5e7eb;
+        }
+        html.theme-dark .container, html.theme-dark main { color: #e5e7eb; }
+        html.theme-dark header.sticky {
+            background-color: rgba(15, 23, 42, 0.92) !important;
+            border-color: #334155 !important;
+        }
+        html.theme-dark .bg-white { background-color: #111827 !important; }
+        html.theme-dark .bg-gray-50, html.theme-dark .bg-gray-100 { background-color: #1f2937 !important; }
+        html.theme-dark .text-gray-900, html.theme-dark .text-gray-800, html.theme-dark .text-gray-700, html.theme-dark .text-gray-600, html.theme-dark .text-gray-500 { color: #d1d5db !important; }
+        html.theme-dark .text-gray-400, html.theme-dark .text-gray-300, html.theme-dark .text-gray-200, html.theme-dark .text-gray-100 { color: #e5e7eb !important; }
+        html.theme-dark .border-gray-200, html.theme-dark .border-gray-300 { border-color: #374151 !important; }
+        html.theme-dark input, html.theme-dark select, html.theme-dark textarea { background-color: #0f172a !important; color: #e5e7eb !important; border-color: #334155 !important; }
+        html.theme-dark .hover\:bg-gray-50:hover, html.theme-dark .hover\:bg-gray-100:hover { background-color: #1e293b !important; }
+        html.theme-dark .hover\:from-purple-50:hover, html.theme-dark .hover\:to-indigo-50:hover {
+            --tw-gradient-from: #1e293b var(--tw-gradient-from-position) !important;
+            --tw-gradient-to: rgb(30 41 59 / 0) var(--tw-gradient-to-position) !important;
+            --tw-gradient-stops: var(--tw-gradient-from), #1e293b var(--tw-gradient-via-position), var(--tw-gradient-to) !important;
+        }
+        html.theme-dark .ring-black { --tw-ring-color: rgb(148 163 184 / 0.2) !important; }
+        html.theme-dark [data-dropdown-target='menu'] {
+            background-color: #111827 !important;
+            border-color: #334155 !important;
+        }
+        html.theme-dark [data-dropdown-target='menu'] a,
+        html.theme-dark [data-dropdown-target='menu'] button,
+        html.theme-dark [data-dropdown-target='menu'] p {
+            color: #e5e7eb !important;
+        }
+        html.theme-dark .shadow-sm, html.theme-dark .shadow-md, html.theme-dark .shadow-lg {
+            box-shadow: 0 10px 30px -20px rgba(0, 0, 0, 0.75) !important;
+        }
+        html.theme-dark .bg-red-50, html.theme-dark .bg-green-50, html.theme-dark .bg-blue-50, html.theme-dark .bg-yellow-50 { background-color: rgba(30, 41, 59, 0.92) !important; }
+        html.theme-dark .bg-red-100, html.theme-dark .bg-green-100, html.theme-dark .bg-blue-100, html.theme-dark .bg-yellow-100 { background-color: rgba(51, 65, 85, 0.95) !important; }
+        html.theme-dark .text-red-700, html.theme-dark .text-green-700, html.theme-dark .text-blue-700, html.theme-dark .text-yellow-700 { color: #f8fafc !important; }
+        html.theme-dark header, html.theme-dark footer { border-color: #334155 !important; }
+    </style>
+</head>
+<body class="font-sans antialiased">
+    {% include 'front/_navbar.html.twig' %}
+    
+    {% for label, messages in app.flashes %}
+        {% for message in messages %}
+            <div class="container mx-auto px-4 py-2">
+                <div class="rounded-lg border px-4 py-3 {% if label == 'success' %}bg-green-50 border-green-200 text-green-800{% elseif label == 'error' %}bg-red-50 border-red-200 text-red-800{% elseif label == 'warning' %}bg-yellow-50 border-yellow-200 text-yellow-800{% else %}bg-blue-50 border-blue-200 text-blue-800{% endif %}" role="alert">
+                    {{ message }}
+                </div>
+            </div>
+        {% endfor %}
+    {% endfor %}
+    
+    <main class="min-h-screen">
+        {% block body %}{% endblock %}
+    </main>
+    
+    {% block footer %}
+        <footer class="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white py-12 mt-16 relative overflow-hidden">
+            <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4wMyI+PHBhdGggZD0iTTM2IDM0di00aC0ydjRoLTR2Mmg0djRoMnYtNGg0di0yaC00em0wLTMwVjBoLTJ2NGgtNHYyaDR2NGgyVjZoNFY0aC00ek02IDM0di00SDR2NGgwdjJoNHY0aDJ2LTRoNHYtMkg2ek02IDRWMEg0djRIMHYyaDR2NGgyVjZoNFY0SDZ6Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-10"></div>
+            <div class="container mx-auto px-4 relative z-10">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+                    <div>
+                        <div class="flex items-center gap-2 mb-4">
+                            <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-purple-600 via-indigo-600 to-blue-600 shadow-lg">
+                                <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                                </svg>
+                            </div>
+                            <h3 class="font-bold text-xl">RentAll</h3>
+                        </div>
+                        <p class="text-sm text-gray-400 leading-relaxed">Your all-in-one rental marketplace for stays, tools, and services.</p>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold mb-4 text-lg">Explore</h4>
+                        <ul class="space-y-3 text-sm">
+                            <li><a href="{{ path('app_home') }}" class="text-gray-400 hover:text-white transition-colors flex items-center group">
+                                <span class="w-1.5 h-1.5 bg-purple-500 rounded-full mr-2 group-hover:bg-purple-400 transition-colors"></span>
+                                Stays
+                            </a></li>
+                            <li><a href="{{ path('app_tools') }}" class="text-gray-400 hover:text-white transition-colors flex items-center group">
+                                <span class="w-1.5 h-1.5 bg-purple-500 rounded-full mr-2 group-hover:bg-purple-400 transition-colors"></span>
+                                Tools
+                            </a></li>
+                            <li><a href="{{ path('app_services') }}" class="text-gray-400 hover:text-white transition-colors flex items-center group">
+                                <span class="w-1.5 h-1.5 bg-purple-500 rounded-full mr-2 group-hover:bg-purple-400 transition-colors"></span>
+                                Services
+                            </a></li>
+                            <li><a href="{{ path('app_covoiturage') }}" class="text-gray-400 hover:text-white transition-colors flex items-center group">
+                                <span class="w-1.5 h-1.5 bg-purple-500 rounded-full mr-2 group-hover:bg-purple-400 transition-colors"></span>
+                                Covoiturage
+                            </a></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold mb-4 text-lg">Support</h4>
+                        <ul class="space-y-3 text-sm">
+                            <li><a href="#" class="text-gray-400 hover:text-white transition-colors flex items-center group">
+                                <span class="w-1.5 h-1.5 bg-indigo-500 rounded-full mr-2 group-hover:bg-indigo-400 transition-colors"></span>
+                                Help Center
+                            </a></li>
+                            <li><a href="#" class="text-gray-400 hover:text-white transition-colors flex items-center group">
+                                <span class="w-1.5 h-1.5 bg-indigo-500 rounded-full mr-2 group-hover:bg-indigo-400 transition-colors"></span>
+                                Contact Us
+                            </a></li>
+                            <li><a href="#" class="text-gray-400 hover:text-white transition-colors flex items-center group">
+                                <span class="w-1.5 h-1.5 bg-indigo-500 rounded-full mr-2 group-hover:bg-indigo-400 transition-colors"></span>
+                                Safety
+                            </a></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold mb-4 text-lg">Legal</h4>
+                        <ul class="space-y-3 text-sm">
+                            <li><a href="#" class="text-gray-400 hover:text-white transition-colors flex items-center group">
+                                <span class="w-1.5 h-1.5 bg-blue-500 rounded-full mr-2 group-hover:bg-blue-400 transition-colors"></span>
+                                Terms of Service
+                            </a></li>
+                            <li><a href="#" class="text-gray-400 hover:text-white transition-colors flex items-center group">
+                                <span class="w-1.5 h-1.5 bg-blue-500 rounded-full mr-2 group-hover:bg-blue-400 transition-colors"></span>
+                                Privacy Policy
+                            </a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="pt-8 border-t border-gray-700 text-center">
+                    <p class="text-sm text-gray-400">&copy; {{ "now"|date("Y") }} RentAll. All rights reserved. Made with <span class="text-red-500">â™¥</span> for amazing experiences.</p>
+                </div>
+            </div>
+        </footer>
+    {% endblock %}
+    
+    {% block javascripts %}
+        {{ importmap('app') }}
+        <script>
+            (function () {
+                var key = 'rentall-theme';
+                function updateButtons() {
+                    var dark = document.documentElement.classList.contains('theme-dark');
+                    document.querySelectorAll('[data-theme-label]').forEach(function (el) {
+                        el.textContent = dark ? 'Mode clair' : 'Mode sombre';
+                    });
+                    document.querySelectorAll('[data-theme-icon]').forEach(function (el) {
+                        el.textContent = dark ? 'LIGHT' : 'DARK';
+                    });
+                }
+                function toggleTheme() {
+                    var dark = document.documentElement.classList.toggle('theme-dark');
+                    var value = dark ? 'dark' : 'light';
+                    document.documentElement.setAttribute('data-theme', value);
+                    try { localStorage.setItem(key, value); } catch (e) {}
+                    updateButtons();
+                }
+                document.addEventListener('click', function (event) {
+                    var btn = event.target.closest('[data-theme-toggle]');
+                    if (!btn) { return; }
+                    event.preventDefault();
+                    toggleTheme();
+                });
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', updateButtons, { once: true });
+                } else {
+                    updateButtons();
+                }
+            })();
+        </script>
+    {% endblock %}
+</body>
+</html>

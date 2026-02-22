@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Réservation #{{ reservation.id }}</title>
+    <style>
+        @page {
+            margin: 0;
+        }
+        body {
+            font-family: 'DejaVu Sans', sans-serif;
+            color: #333;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+        }
+        .page {
+            padding: 40px;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+            margin: -40px -40px 40px -40px;
+            position: relative;
+        }
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 20px solid transparent;
+            border-right: 20px solid transparent;
+            border-top: 20px solid #764ba2;
+        }
+        .logo {
+            font-size: 36px;
+            font-weight: bold;
+            margin: 0 0 10px 0;
+            letter-spacing: 2px;
+        }
+        .header-subtitle {
+            font-size: 18px;
+            margin: 0;
+            opacity: 0.9;
+        }
+        .confirmation-number {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 15px 30px;
+            border-radius: 50px;
+            display: inline-block;
+            margin-top: 20px;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 25px;
+            border: 2px solid #e8e8e8;
+            border-radius: 12px;
+            background: #ffffff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .section-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #667eea;
+            margin: 0 0 20px 0;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #667eea;
+            display: flex;
+            align-items: center;
+        }
+        .section-icon {
+            width: 24px;
+            height: 24px;
+            margin-right: 10px;
+            display: inline-block;
+        }
+        .info-grid {
+            display: table;
+            width: 100%;
+        }
+        .info-row {
+            display: table-row;
+        }
+        .info-label, .info-value {
+            display: table-cell;
+            padding: 12px 10px;
+            border-bottom: 1px solid #f5f5f5;
+        }
+        .info-label {
+            font-weight: 600;
+            color: #666;
+            width: 40%;
+        }
+        .info-value {
+            color: #333;
+            font-weight: 500;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 8px 20px;
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .status-confirmee {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+        .status-en_attente {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+        }
+        .status-refusee {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+        }
+        .status-annulee {
+            background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+            color: white;
+        }
+        .highlight-box {
+            background: linear-gradient(135deg, #f0f4ff 0%, #e0e7ff 100%);
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 5px solid #667eea;
+            margin: 15px 0;
+        }
+        .price-breakdown {
+            background: #f9fafb;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 15px;
+        }
+        .price-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px dashed #e5e7eb;
+        }
+        .price-row:last-child {
+            border-bottom: none;
+        }
+        .total-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .total-label {
+            font-size: 20px;
+            font-weight: bold;
+        }
+        .total-amount {
+            font-size: 32px;
+            font-weight: bold;
+        }
+        .info-box {
+            background: #fef3c7;
+            border: 2px solid #fbbf24;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .info-box-title {
+            font-weight: bold;
+            color: #92400e;
+            margin: 0 0 10px 0;
+            font-size: 16px;
+        }
+        .info-box-content {
+            color: #78350f;
+            margin: 0;
+            line-height: 1.8;
+        }
+        .checklist {
+            background: #f0fdf4;
+            border: 2px solid #86efac;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .checklist-title {
+            font-weight: bold;
+            color: #166534;
+            margin: 0 0 15px 0;
+            font-size: 16px;
+        }
+        .checklist-item {
+            padding: 8px 0;
+            color: #15803d;
+            display: flex;
+            align-items: center;
+        }
+        .checklist-item::before {
+            content: '✓';
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            background: #22c55e;
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 24px;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+        .contact-section {
+            background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+            padding: 25px;
+            border-radius: 10px;
+            margin-top: 30px;
+        }
+        .contact-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #374151;
+            margin: 0 0 15px 0;
+        }
+        .contact-info {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+        }
+        .contact-item {
+            text-align: center;
+            padding: 10px;
+        }
+        .contact-label {
+            font-size: 12px;
+            color: #6b7280;
+            margin-bottom: 5px;
+        }
+        .contact-value {
+            font-size: 14px;
+            font-weight: bold;
+            color: #1f2937;
+        }
+        .footer {
+            margin-top: 50px;
+            padding-top: 30px;
+            border-top: 3px solid #e5e7eb;
+            text-align: center;
+            color: #6b7280;
+        }
+        .footer-logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        .footer-text {
+            font-size: 12px;
+            margin: 5px 0;
+        }
+        .qr-placeholder {
+            width: 120px;
+            height: 120px;
+            background: #f3f4f6;
+            border: 2px dashed #d1d5db;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 20px auto;
+            color: #9ca3af;
+            font-size: 12px;
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 11px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .badge-primary {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+        .badge-success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        .divider {
+            height: 2px;
+            background: linear-gradient(to right, transparent, #e5e7eb, transparent);
+            margin: 30px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        {# Header #}
+        <div class="header">
+            <div class="logo">🏠 RENTALL</div>
+            <p class="header-subtitle">Confirmation de Réservation</p>
+            <div class="confirmation-number">
+                Réservation N° {{ '%06d'|format(reservation.id) }}
+            </div>
+        </div>
+
+        {# Statut de la réservation #}
+        <div class="section">
+            <div class="section-title">
+                <span class="section-icon">📋</span>
+                Statut de la Réservation
+            </div>
+            <div class="highlight-box">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div style="font-size: 14px; color: #6b7280; margin-bottom: 5px;">Statut actuel</div>
+                        <span class="status-badge status-{{ reservation.statut }}">
+                            {% if reservation.statut == 'confirmee' %}
+                                ✓ Confirmée
+                            {% elseif reservation.statut == 'en_attente' %}
+                                ⏳ En attente
+                            {% elseif reservation.statut == 'refusee' %}
+                                ✕ Refusée
+                            {% elseif reservation.statut == 'annulee' %}
+                                ✕ Annulée
+                            {% else %}
+                                {{ reservation.statut }}
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-size: 14px; color: #6b7280; margin-bottom: 5px;">Date de réservation</div>
+                        <div style="font-size: 16px; font-weight: bold; color: #374151;">
+                            {{ reservation.dateCreation|date('d/m/Y à H:i') }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# Informations du logement #}
+        <div class="section">
+            <div class="section-title">
+                <span class="section-icon">🏡</span>
+                Informations du Logement
+            </div>
+            <div class="info-grid">
+                <div class="info-row">
+                    <div class="info-label">Nom du logement</div>
+                    <div class="info-value" style="font-weight: bold; color: #667eea;">{{ reservation.logement.titre }}</div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Adresse complète</div>
+                    <div class="info-value">{{ reservation.logement.adresse }}</div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Type de logement</div>
+                    <div class="info-value">{{ reservation.logement.type }}<span class="badge badge-primary">{{ reservation.logement.nombreChambres }} chambre(s)</span></div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Capacité d'accueil</div>
+                    <div class="info-value">{{ reservation.logement.capacite }} personne(s) maximum</div>
+                </div>
+                {% if reservation.logement.description %}
+                <div class="info-row">
+                    <div class="info-label">Description</div>
+                    <div class="info-value">{{ reservation.logement.description|slice(0, 150) }}{% if reservation.logement.description|length > 150 %}...{% endif %}</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        {# Détails du séjour #}
+        <div class="section">
+            <div class="section-title">
+                <span class="section-icon">📅</span>
+                Détails du Séjour
+            </div>
+            <div class="info-grid">
+                <div class="info-row">
+                    <div class="info-label">Date d'arrivée (Check-in)</div>
+                    <div class="info-value" style="font-weight: bold;">{{ reservation.dateDebut|date('l d F Y') }}<span class="badge badge-success">À partir de 15h00</span></div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Date de départ (Check-out)</div>
+                    <div class="info-value" style="font-weight: bold;">{{ reservation.dateFin|date('l d F Y') }}<span class="badge badge-primary">Avant 11h00</span></div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Durée totale du séjour</div>
+                    <div class="info-value" style="font-size: 18px; font-weight: bold; color: #667eea;">{{ reservation.nombreNuits }} nuit{{ reservation.nombreNuits > 1 ? 's' : '' }}</div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Nombre de voyageurs</div>
+                    <div class="info-value">{{ reservation.nombrePersonnes }} personne{{ reservation.nombrePersonnes > 1 ? 's' : '' }}</div>
+                </div>
+                {% if reservation.notesSpeciales %}
+                <div class="info-row">
+                    <div class="info-label">Notes spéciales</div>
+                    <div class="info-value">{{ reservation.notesSpeciales }}</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        {# Informations du voyageur #}
+        <div class="section">
+            <div class="section-title">
+                <span class="section-icon">👤</span>
+                Informations du Voyageur
+            </div>
+            <div class="info-grid">
+                <div class="info-row">
+                    <div class="info-label">Nom complet</div>
+                    <div class="info-value" style="font-weight: bold;">
+                        {% if reservation.locataire.prenom and reservation.locataire.nom %}
+                            {{ reservation.locataire.prenom }} {{ reservation.locataire.nom }}
+                        {% else %}
+                            {{ reservation.locataire.email|split('@')[0] }}
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Adresse email</div>
+                    <div class="info-value">{{ reservation.locataire.email }}</div>
+                </div>
+            </div>
+        </div>
+
+        {# Détails du paiement #}
+        <div class="section">
+            <div class="section-title">
+                <span class="section-icon">💳</span>
+                Détails du Paiement
+            </div>
+            <div class="price-breakdown">
+                <div class="price-row">
+                    <span>{{ reservation.logement.prixParNuit }}€ × {{ reservation.nombreNuits }} nuit{{ reservation.nombreNuits > 1 ? 's' : '' }}</span>
+                    <span style="font-weight: bold;">{{ reservation.montantTotal }}€</span>
+                </div>
+                <div class="price-row">
+                    <span>Frais de service</span>
+                    <span style="font-weight: bold;">0€</span>
+                </div>
+                <div class="price-row">
+                    <span>Taxes et frais</span>
+                    <span style="font-weight: bold;">Inclus</span>
+                </div>
+            </div>
+            <div class="total-section">
+                <div class="total-row">
+                    <span class="total-label">MONTANT TOTAL</span>
+                    <span class="total-amount">{{ reservation.montantTotal }}€</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="divider"></div>
+
+        {# Informations importantes #}
+        <div class="info-box">
+            <div class="info-box-title">⚠️ Politique d'Annulation</div>
+            <div class="info-box-content">
+                <strong>Annulation gratuite jusqu'à 3 jours avant la date d'arrivée.</strong><br>
+                Après ce délai, le montant total de la réservation sera retenu. Pour annuler votre réservation, 
+                connectez-vous à votre compte et accédez à la section "Mes Réservations".
+            </div>
+        </div>
+
+        {# Checklist #}
+        <div class="checklist">
+            <div class="checklist-title">✓ Avant votre arrivée</div>
+            <div class="checklist-item">Vérifiez les horaires de check-in (à partir de 15h00)</div>
+            <div class="checklist-item">Préparez une pièce d'identité valide</div>
+            <div class="checklist-item">Contactez l'hôte 24h avant votre arrivée</div>
+            <div class="checklist-item">Notez l'adresse exacte et les instructions d'accès</div>
+            <div class="checklist-item">Imprimez ou sauvegardez ce document de confirmation</div>
+        </div>
+
+        {# Contact #}
+        <div class="contact-section">
+            <div class="contact-title">📞 Besoin d'aide ?</div>
+            <div class="contact-info">
+                <div class="contact-item">
+                    <div class="contact-label">Email Support</div>
+                    <div class="contact-value">support@rentall.com</div>
+                </div>
+                <div class="contact-item">
+                    <div class="contact-label">Téléphone</div>
+                    <div class="contact-value">+33 1 23 45 67 89</div>
+                </div>
+                <div class="contact-item">
+                    <div class="contact-label">Disponibilité</div>
+                    <div class="contact-value">7j/7 - 24h/24</div>
+                </div>
+            </div>
+        </div>
+
+        {# Footer #}
+        <div class="footer">
+            <div class="footer-logo">🏠 RENTALL</div>
+            <p class="footer-text"><strong>Votre plateforme de location de confiance</strong></p>
+            <p class="footer-text">www.rentall.com • support@rentall.com</p>
+            <p class="footer-text" style="margin-top: 20px; color: #9ca3af;">
+                Document généré le {{ "now"|date('d/m/Y à H:i') }} • Réservation #{{ '%06d'|format(reservation.id) }}
+            </p>
+            <p class="footer-text" style="font-size: 10px; margin-top: 15px;">
+                Ce document constitue une confirmation de réservation. Veuillez le conserver pour vos dossiers.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

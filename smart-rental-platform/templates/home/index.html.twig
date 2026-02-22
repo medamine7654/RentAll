@@ -1,0 +1,61 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Find your perfect stay - RentAll{% endblock %}
+
+{% block body %}
+<div class="container mx-auto px-4 py-6">
+    {# Hero section #}
+    <section class="mb-8 text-center">
+        <h1 class="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
+            Find your perfect stay
+        </h1>
+        <p class="mt-2 text-gray-600">
+            Discover unique places to stay around the world
+        </p>
+    </section>
+
+    {# Search and filters #}
+    <section class="mb-8">
+        {% include 'components/search_filters.html.twig' with {filters: filters} %}
+    </section>
+
+    {# Results count #}
+    <div class="mb-4 text-sm text-gray-600">
+        {{ logements|length }} {{ logements|length == 1 ? 'place' : 'places' }} found
+    </div>
+
+    {# Logements grid #}
+    <section>
+        {% if isLoading %}
+            {# Loading skeleton #}
+            {% import 'components/logement_card.html.twig' as card %}
+            <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {% for i in 0..7 %}
+                    {{ card.skeleton() }}
+                {% endfor %}
+            </div>
+        {% elseif logements|length > 0 %}
+            {# Logements grid #}
+            {% import 'components/logement_card.html.twig' as card %}
+            <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {% for logement in logements %}
+                    {{ card.render(logement, hosts[logement.hostId] ?? null) }}
+                {% endfor %}
+            </div>
+        {% else %}
+            {# Empty state #}
+            <div class="flex flex-col items-center justify-center py-12 text-center">
+                <div class="rounded-full bg-gray-100 p-6">
+                    <svg class="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                </div>
+                <h3 class="mt-4 text-lg font-medium text-gray-900">No places found</h3>
+                <p class="mt-1 text-gray-600">
+                    Try adjusting your search or filters
+                </p>
+            </div>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}

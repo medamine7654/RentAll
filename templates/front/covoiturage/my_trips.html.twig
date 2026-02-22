@@ -1,0 +1,353 @@
+{% extends 'front/base.html.twig' %}
+
+{% block title %}Mes Trajets - Covoiturage{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+{% endblock %}
+
+{% block body %}
+<div class="min-h-screen bg-gray-50 py-8">
+    <div class="container mx-auto px-4">
+        <div class="mb-8">
+            <h1 class="text-4xl font-bold text-gray-900 mb-2">Mes Trajets</h1>
+            <p class="text-gray-600">Gérez vos trajets en tant que conducteur et vos participations en tant que passager</p>
+            <div class="mt-4 flex gap-3">
+                <a href="{{ path('app_covoiturage') }}" 
+                   class="inline-flex items-center px-6 py-3 bg-white text-purple-600 border-2 border-purple-600 rounded-xl hover:bg-purple-50 transition font-bold shadow-md">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                    Rechercher un trajet
+                </a>
+                <a href="{{ path('app_covoiturage_create') }}" 
+                   class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl hover:from-purple-700 hover:to-indigo-700 transition font-bold shadow-lg">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                    </svg>
+                    Créer un trajet
+                </a>
+            </div>
+        </div>
+
+        {# Section: Mes trajets créés (Conducteur) #}
+        {% if myTrips|length > 0 %}
+            <div class="mb-12">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-2xl font-bold text-gray-900">
+                        🚗 Mes trajets créés
+                        <span class="ml-2 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm">{{ myTrips|length }}</span>
+                    </h2>
+                    <a href="{{ path('app_covoiturage_create') }}" 
+                       class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl hover:from-purple-700 hover:to-indigo-700 transition font-bold shadow-lg">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                        </svg>
+                        Créer un trajet
+                    </a>
+                </div>
+
+                <div class="space-y-6">
+                    {% for trip in myTrips %}
+                        {% set participants = participantsByTrip[trip.id]|default([]) %}
+                        {% set enAttente = participants|filter(p => p.statut == 'en_attente')|length %}
+                        {% set confirmes = participants|filter(p => p.statut == 'confirme')|length %}
+                        
+                        <div class="bg-white rounded-2xl shadow-lg p-6 border-2 border-gray-100 hover:border-indigo-200 transition">
+                            <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+                                {# Informations du trajet #}
+                                <div class="flex-1">
+                                    <div class="flex items-start gap-4 mb-4">
+                                        <div class="bg-gradient-to-br from-indigo-100 to-purple-100 rounded-xl p-4">
+                                            <svg class="w-8 h-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17h6m-8 0a2 2 0 100 4 2 2 0 000-4zm10 0a2 2 0 100 4 2 2 0 000-4zM3 7h18M5 17l1.5-6h11L19 17"></path>
+                                            </svg>
+                                        </div>
+                                        <div class="flex-1">
+                                            <div class="flex items-center gap-3 mb-2">
+                                                <h3 class="text-xl font-bold text-gray-900">{{ trip.depart }}</h3>
+                                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+                                                </svg>
+                                                <h3 class="text-xl font-bold text-gray-900">{{ trip.destination }}</h3>
+                                            </div>
+                                            <div class="flex flex-wrap gap-4 text-sm text-gray-600">
+                                                <div class="flex items-center">
+                                                    <svg class="w-5 h-5 mr-2 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                                    </svg>
+                                                    <span class="font-medium">{{ trip.dateDepart|date('d/m/Y à H:i') }}</span>
+                                                </div>
+                                                <div class="flex items-center">
+                                                    <svg class="w-5 h-5 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                                    </svg>
+                                                    <span class="font-medium">{{ confirmes }}/{{ trip.places }} places confirmées</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {# Demandes en attente #}
+                                    {% if enAttente > 0 %}
+                                        <div class="bg-orange-50 border-2 border-orange-200 rounded-xl p-4 mb-4">
+                                            <div class="flex items-center justify-between mb-3">
+                                                <h4 class="font-bold text-orange-800 flex items-center">
+                                                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                    </svg>
+                                                    {{ enAttente }} demande(s) en attente
+                                                </h4>
+                                            </div>
+                                            <div class="space-y-2">
+                                                {% for participant in participants %}
+                                                    {% if participant.statut == 'en_attente' %}
+                                                        <div class="bg-white rounded-lg p-3 flex items-center justify-between">
+                                                            <div class="flex items-center gap-3">
+                                                                <div class="w-10 h-10 bg-gradient-to-br from-orange-500 to-red-500 rounded-full flex items-center justify-center text-white font-bold">
+                                                                    {{ participant.passager.email|first|upper }}
+                                                                </div>
+                                                                <div>
+                                                                    <p class="font-medium text-gray-900">
+                                                                        {% if participant.passager.prenom and participant.passager.nom %}
+                                                                            {{ participant.passager.prenom }} {{ participant.passager.nom }}
+                                                                        {% else %}
+                                                                            {{ participant.passager.email }}
+                                                                        {% endif %}
+                                                                    </p>
+                                                                    <p class="text-xs text-gray-500">Demande le {{ participant.dateCreation|date('d/m/Y à H:i') }}</p>
+                                                                </div>
+                                                            </div>
+                                                            <div class="flex gap-2">
+                                                                <form method="post" action="{{ path('app_covoiturage_accept_participant', {id: participant.id}) }}">
+                                                                    <input type="hidden" name="_token" value="{{ csrf_token('accept-participant' ~ participant.id) }}">
+                                                                    <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-bold text-sm">
+                                                                        ✓ Accepter
+                                                                    </button>
+                                                                </form>
+                                                                <form method="post" action="{{ path('app_covoiturage_reject_participant', {id: participant.id}) }}">
+                                                                    <input type="hidden" name="_token" value="{{ csrf_token('reject-participant' ~ participant.id) }}">
+                                                                    <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-bold text-sm">
+                                                                        ✕ Refuser
+                                                                    </button>
+                                                                </form>
+                                                            </div>
+                                                        </div>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    {% endif %}
+
+                                    {# Participants confirmés #}
+                                    {% if confirmes > 0 %}
+                                        <div class="bg-green-50 border border-green-200 rounded-xl p-4">
+                                            <h4 class="font-bold text-green-800 mb-3 flex items-center">
+                                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                </svg>
+                                                Participants confirmés ({{ confirmes }})
+                                            </h4>
+                                            <div class="flex flex-wrap gap-2">
+                                                {% for participant in participants %}
+                                                    {% if participant.statut == 'confirme' %}
+                                                        <div class="inline-flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-green-200">
+                                                            <div class="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                                                                {{ participant.passager.email|first|upper }}
+                                                            </div>
+                                                            <span class="text-sm font-medium text-gray-900">
+                                                                {% if participant.passager.prenom and participant.passager.nom %}
+                                                                    {{ participant.passager.prenom }} {{ participant.passager.nom }}
+                                                                {% else %}
+                                                                    {{ participant.passager.email|split('@')[0] }}
+                                                                {% endif %}
+                                                            </span>
+                                                        </div>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                    
+                                    {# Mini Map for this trip #}
+                                    <div class="mt-4">
+                                        <button type="button" 
+                                                onclick="toggleMap('map-{{ trip.id }}', '{{ trip.depart|e('js') }}', '{{ trip.destination|e('js') }}')" 
+                                                class="w-full px-4 py-2 text-sm font-medium text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-lg hover:bg-indigo-100 flex items-center justify-center gap-2">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path>
+                                            </svg>
+                                            Voir l'itinéraire sur la carte
+                                        </button>
+                                        <div id="map-{{ trip.id }}" class="hidden mt-3 rounded-lg border-2 border-indigo-200" style="height: 300px;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+
+        {# Section: Mes participations (Passager) #}
+        {% if myParticipations|length > 0 %}
+            <div>
+                <h2 class="text-2xl font-bold text-gray-900 mb-6">
+                    🎒 Mes participations
+                    <span class="ml-2 px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm">{{ myParticipations|length }}</span>
+                </h2>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {% for participation in myParticipations %}
+                        {% set trip = participation.covoiturage %}
+                        <div class="bg-white rounded-2xl shadow-lg overflow-hidden border-2 {% if participation.statut == 'en_attente' %}border-orange-200{% elseif participation.statut == 'confirme' %}border-green-200{% else %}border-gray-200{% endif %}">
+                            <div class="p-6">
+                                <div class="flex items-center justify-between mb-4">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-12 h-12 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-full flex items-center justify-center text-white font-bold">
+                                            {{ trip.conducteur.email|first|upper }}
+                                        </div>
+                                        <div>
+                                            <p class="text-sm text-gray-500">Conducteur</p>
+                                            <p class="font-bold text-gray-900">
+                                                {% if trip.conducteur.prenom and trip.conducteur.nom %}
+                                                    {{ trip.conducteur.prenom }} {{ trip.conducteur.nom }}
+                                                {% else %}
+                                                    {{ trip.conducteur.email|split('@')[0] }}
+                                                {% endif %}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    {% if participation.statut == 'en_attente' %}
+                                        <span class="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-bold">⏳ En attente</span>
+                                    {% elseif participation.statut == 'confirme' %}
+                                        <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold">✓ Confirmé</span>
+                                    {% elseif participation.statut == 'refuse' %}
+                                        <span class="px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-bold">✕ Refusé</span>
+                                    {% else %}
+                                        <span class="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-bold">✕ Annulé</span>
+                                    {% endif %}
+                                </div>
+
+                                <div class="space-y-3">
+                                    <div class="flex items-center gap-2">
+                                        <svg class="w-5 h-5 text-blue-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                                        </svg>
+                                        <div class="flex-1">
+                                            <p class="text-sm text-gray-500">Départ</p>
+                                            <p class="font-bold text-gray-900">{{ trip.depart }}</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <svg class="w-5 h-5 text-red-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                                        </svg>
+                                        <div class="flex-1">
+                                            <p class="text-sm text-gray-500">Destination</p>
+                                            <p class="font-bold text-gray-900">{{ trip.destination }}</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <svg class="w-5 h-5 text-purple-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                        </svg>
+                                        <div class="flex-1">
+                                            <p class="text-sm text-gray-500">Date</p>
+                                            <p class="font-bold text-gray-900">{{ trip.dateDepart|date('d/m/Y à H:i') }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {% if participation.statut == 'confirme' %}
+                                    <form method="post" action="{{ path('app_covoiturage_cancel', {id: trip.id}) }}" class="mt-4" onsubmit="return confirm('Êtes-vous sûr de vouloir annuler cette participation ?')">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('cancel-covoiturage' ~ trip.id) }}">
+                                        <button type="submit" class="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-bold">
+                                            Annuler ma participation
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+
+        {# État vide #}
+        {% if myTrips|length == 0 and myParticipations|length == 0 %}
+            <div class="bg-white rounded-2xl shadow-lg p-12">
+                <div class="flex flex-col items-center justify-center text-center">
+                    <div class="rounded-full bg-gradient-to-br from-gray-100 to-gray-200 p-8 mb-6">
+                        <svg class="h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 17h6m-8 0a2 2 0 100 4 2 2 0 000-4zm10 0a2 2 0 100 4 2 2 0 000-4zM3 7h18M5 17l1.5-6h11L19 17"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-2xl font-bold text-gray-900 mb-2">Aucun trajet</h3>
+                    <p class="text-gray-600 mb-6">
+                        Vous n'avez pas encore créé de trajet ni participé à un covoiturage
+                    </p>
+                    <div class="flex gap-4">
+                        <a href="{{ path('app_covoiturage_create') }}" 
+                           class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl hover:from-purple-700 hover:to-indigo-700 transition font-bold shadow-lg">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                            </svg>
+                            Créer un trajet
+                        </a>
+                        <a href="{{ path('app_covoiturage') }}" 
+                           class="inline-flex items-center px-6 py-3 bg-white text-purple-600 border-2 border-purple-600 rounded-xl hover:bg-purple-50 transition font-bold">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                            Rechercher un trajet
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" data-turbo-track="reload"></script>
+    <script src="{{ asset('js/leaflet-map.js') }}" data-turbo-track="reload"></script>
+    <script>
+        const tripMaps = {};
+        
+        function toggleMap(mapId, depart, destination) {
+            const mapDiv = document.getElementById(mapId);
+            
+            if (mapDiv.classList.contains('hidden')) {
+                mapDiv.classList.remove('hidden');
+                
+                // Initialize map if not already done
+                if (!tripMaps[mapId]) {
+                    // Create map instance
+                    const manager = new window.LeafletMapManager(mapId, {
+                        defaultCenter: [46.603354, 1.888334],
+                        defaultZoom: 6,
+                        autoSwitch: false
+                    });
+                    
+                    // Display existing locations
+                    if (depart && destination) {
+                        manager.displayExistingLocations(depart, destination);
+                    }
+                    
+                    tripMaps[mapId] = manager;
+                    
+                    // Force map to recalculate size after a short delay
+                    setTimeout(() => {
+                        manager.map.invalidateSize();
+                    }, 100);
+                }
+            } else {
+                mapDiv.classList.add('hidden');
+            }
+        }
+    </script>
+{% endblock %}

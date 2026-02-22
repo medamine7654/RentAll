@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Covoiturage #{{ '%06d'|format(covoiturage.id) }}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Helvetica', 'Arial', sans-serif;
+            font-size: 14px;
+            line-height: 1.6;
+            color: #1f2937;
+            background: #f9fafb;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 50%, #3b82f6 100%);
+            color: white;
+            padding: 40px;
+            border-radius: 20px 20px 0 0;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .logo {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .header-subtitle {
+            font-size: 18px;
+            opacity: 0.9;
+            margin-bottom: 20px;
+        }
+        
+        .confirmation-number {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 15px 30px;
+            border-radius: 10px;
+            display: inline-block;
+            font-size: 20px;
+            font-weight: bold;
+        }
+        
+        .section {
+            background: white;
+            padding: 30px;
+            margin-bottom: 20px;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        
+        .section-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #7c3aed;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+        }
+        
+        .section-icon {
+            margin-right: 10px;
+            font-size: 24px;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        
+        .info-label {
+            font-weight: 600;
+            color: #6b7280;
+        }
+        
+        .info-value {
+            font-weight: 500;
+            color: #1f2937;
+            text-align: right;
+        }
+        
+        .route-display {
+            background: linear-gradient(135deg, #f0fdf4 0%, #dbeafe 100%);
+            padding: 30px;
+            border-radius: 15px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .route-point {
+            display: inline-block;
+            padding: 15px 30px;
+            margin: 10px;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        
+        .route-depart {
+            background: #10b981;
+            color: white;
+        }
+        
+        .route-destination {
+            background: #ef4444;
+            color: white;
+        }
+        
+        .route-arrow {
+            font-size: 30px;
+            color: #6b7280;
+            margin: 0 20px;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .status-disponible {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .status-complet {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .participants-list {
+            margin-top: 15px;
+        }
+        
+        .participant-item {
+            background: #f9fafb;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 10px;
+            border-left: 4px solid #7c3aed;
+        }
+        
+        .participant-name {
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 5px;
+        }
+        
+        .participant-status {
+            font-size: 12px;
+            padding: 4px 12px;
+            border-radius: 12px;
+            display: inline-block;
+        }
+        
+        .participant-status.confirme {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .participant-status.en_attente {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 30px;
+            color: #6b7280;
+            font-size: 12px;
+            margin-top: 40px;
+        }
+        
+        .footer-text {
+            margin: 5px 0;
+        }
+        
+        .highlight-box {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #f59e0b;
+            margin: 20px 0;
+        }
+        
+        .highlight-title {
+            font-weight: bold;
+            color: #92400e;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        {# Header #}
+        <div class="header">
+            <div class="logo">🚗 RENTALL COVOITURAGE</div>
+            <p class="header-subtitle">Détails du Trajet</p>
+            <div class="confirmation-number">
+                Trajet N° {{ '%06d'|format(covoiturage.id) }}
+            </div>
+        </div>
+
+        {# Route Display #}
+        <div class="section">
+            <div class="section-title">
+                <span class="section-icon">🗺️</span>
+                Itinéraire
+            </div>
+            <div class="route-display">
+                <span class="route-point route-depart">🟢 {{ covoiturage.depart }}</span>
+                <span class="route-arrow">→</span>
+                <span class="route-point route-destination">🔴 {{ covoiturage.destination }}</span>
+            </div>
+        </div>
+
+        {# Trip Details #}
+        <div class="section">
+            <div class="section-title">
+                <span class="section-icon">📋</span>
+                Informations du Trajet
+            </div>
+            <div class="info-row">
+                <div class="info-label">Date et heure de départ</div>
+                <div class="info-value">{{ covoiturage.dateDepart|date('d/m/Y à H:i') }}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Nombre de places</div>
+                <div class="info-value">{{ covoiturage.places }} place{{ covoiturage.places > 1 ? 's' : '' }}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Places réservées</div>
+                <div class="info-value">{{ participants|length }} participant{{ participants|length > 1 ? 's' : '' }}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Places disponibles</div>
+                <div class="info-value">
+                    {% set remaining = covoiturage.places - participants|length %}
+                    {{ remaining > 0 ? remaining : 0 }} place{{ remaining > 1 ? 's' : '' }}
+                </div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Statut</div>
+                <div class="info-value">
+                    {% set remaining = covoiturage.places - participants|length %}
+                    {% if remaining > 0 %}
+                        <span class="status-badge status-disponible">✓ Disponible</span>
+                    {% else %}
+                        <span class="status-badge status-complet">✕ Complet</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        {# Driver Information #}
+        <div class="section">
+            <div class="section-title">
+                <span class="section-icon">👤</span>
+                Conducteur
+            </div>
+            <div class="info-row">
+                <div class="info-label">Nom</div>
+                <div class="info-value">
+                    {% if covoiturage.conducteur.prenom and covoiturage.conducteur.nom %}
+                        {{ covoiturage.conducteur.prenom }} {{ covoiturage.conducteur.nom }}
+                    {% else %}
+                        {{ covoiturage.conducteur.email|split('@')[0] }}
+                    {% endif %}
+                </div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Email</div>
+                <div class="info-value">{{ covoiturage.conducteur.email }}</div>
+            </div>
+        </div>
+
+        {# Participants List #}
+        {% if participants|length > 0 %}
+        <div class="section">
+            <div class="section-title">
+                <span class="section-icon">👥</span>
+                Participants ({{ participants|length }})
+            </div>
+            <div class="participants-list">
+                {% for participant in participants %}
+                <div class="participant-item">
+                    <div class="participant-name">
+                        {% if participant.passager.prenom and participant.passager.nom %}
+                            {{ participant.passager.prenom }} {{ participant.passager.nom }}
+                        {% else %}
+                            {{ participant.passager.email|split('@')[0] }}
+                        {% endif %}
+                    </div>
+                    <div>
+                        <span class="participant-status {{ participant.statut }}">
+                            {% if participant.statut == 'confirme' %}
+                                ✓ Confirmé
+                            {% elseif participant.statut == 'en_attente' %}
+                                ⏳ En attente
+                            {% elseif participant.statut == 'refuse' %}
+                                ✕ Refusé
+                            {% else %}
+                                ✕ Annulé
+                            {% endif %}
+                        </span>
+                        <span style="color: #6b7280; font-size: 12px; margin-left: 10px;">
+                            {{ participant.passager.email }}
+                        </span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {# Important Information #}
+        <div class="highlight-box">
+            <div class="highlight-title">ℹ️ Informations Importantes</div>
+            <ul style="margin-left: 20px; color: #92400e;">
+                <li>Soyez ponctuel au point de départ</li>
+                <li>Respectez les règles de courtoisie</li>
+                <li>En cas d'empêchement, prévenez le conducteur</li>
+                <li>Partagez les frais équitablement si convenu</li>
+            </ul>
+        </div>
+
+        {# Footer #}
+        <div class="footer">
+            <p class="footer-text">🚗 RentAll Covoiturage - Voyagez ensemble, économisez ensemble</p>
+            <p class="footer-text">www.rentall.com • support@rentall.com</p>
+            <p class="footer-text" style="margin-top: 20px; color: #9ca3af;">
+                Document généré le {{ "now"|date('d/m/Y à H:i') }} • Trajet #{{ '%06d'|format(covoiturage.id) }}
+            </p>
+            <p class="footer-text" style="font-size: 10px; margin-top: 15px;">
+                Ce document est généré automatiquement et ne nécessite pas de signature.
+            </p>
+        </div>
+    </div>
+</body>
+</html>
