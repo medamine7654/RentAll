@@ -1,0 +1,59 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Edit Category - Admin{% endblock %}
+
+{% block body %}
+<div class="max-w-2xl">
+    <h1 class="text-2xl font-bold text-gray-900 mb-6">Edit Category</h1>
+
+    <div class="bg-white rounded-lg shadow p-6">
+        <form method="post">
+            <div class="space-y-4">
+                <div>
+                    <label for="name" class="block text-sm font-medium text-gray-700">Category Name *</label>
+                    <input type="text" name="name" id="name" value="{{ category.name }}" required 
+                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                </div>
+
+                <div>
+                    <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
+                    <textarea name="description" id="description" rows="3"
+                              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">{{ category.description }}</textarea>
+                </div>
+
+                <div>
+                    <label for="type" class="block text-sm font-medium text-gray-700">Type *</label>
+                    <select name="type" id="type" required
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        <option value="service" {% if category.type == 'service' %}selected{% endif %}>Service</option>
+                        <option value="tool" {% if category.type == 'tool' %}selected{% endif %}>Tool</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="icon" class="block text-sm font-medium text-gray-700">Font Awesome Icon Class</label>
+                    <div class="flex items-center gap-3">
+                        <input type="text" name="icon" id="icon" value="{{ category.icon }}"
+                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        {% if category.icon %}
+                            <i class="{{ category.icon }} text-2xl text-gray-600"></i>
+                        {% endif %}
+                    </div>
+                    <p class="mt-1 text-sm text-gray-500">
+                        Find icons at <a href="https://fontawesome.com/icons" target="_blank" class="text-blue-600 hover:underline">fontawesome.com/icons</a>
+                    </p>
+                </div>
+            </div>
+
+            <div class="mt-6 flex gap-3">
+                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                    <i class="fa-solid fa-save mr-2"></i>Update Category
+                </button>
+                <a href="{{ path('admin_category_index') }}" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

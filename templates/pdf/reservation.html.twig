@@ -403,12 +403,6 @@
                     <div class="info-label">Nombre de voyageurs</div>
                     <div class="info-value">{{ reservation.nombrePersonnes }} personne{{ reservation.nombrePersonnes > 1 ? 's' : '' }}</div>
                 </div>
-                {% if reservation.notesSpeciales %}
-                <div class="info-row">
-                    <div class="info-label">Notes spéciales</div>
-                    <div class="info-value">{{ reservation.notesSpeciales }}</div>
-                </div>
-                {% endif %}
             </div>
         </div>
 

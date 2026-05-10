@@ -82,7 +82,8 @@ if __name__ == "__main__":
     manifest_path = sys.argv[2]
     threshold = float(sys.argv[3])
     cache_path = sys.argv[4] if len(sys.argv) >= 5 else os.path.join("var", "face-login", "face-identify-cache.json")
-    max_side = int(os.environ.get("FACE_IDENTIFY_MAX_IMAGE_SIDE", "900"))
+    max_side = int(os.environ.get("FACE_IDENTIFY_MAX_IMAGE_SIDE", "1100"))
+    ambiguity_margin = float(os.environ.get("FACE_LOGIN_AMBIGUITY_MARGIN", "0.03"))
 
     if not os.path.isfile(probe_path) or not os.path.isfile(manifest_path):
         out({"success": False, "matched": False, "user_id": None, "distance": None, "error": "Fichiers invalides"}, 1)
@@ -124,6 +125,7 @@ if __name__ == "__main__":
 
         best_user_id = None
         best_distance = None
+        second_best_distance = None
         seen_paths = set()
 
         for candidate in candidates:
@@ -158,6 +160,8 @@ if __name__ == "__main__":
                 candidate_img = load_rgb(path, image_ops, max_side)
                 candidate_enc = face_encoding(candidate_img, face_recognition, fast_mode=True)
                 if candidate_enc is None:
+                    candidate_enc = face_encoding(candidate_img, face_recognition, fast_mode=False)
+                if candidate_enc is None:
                     continue
                 cache[path] = {
                     "mtime": mtime,
@@ -167,8 +171,13 @@ if __name__ == "__main__":
 
             dist = float(face_recognition.face_distance([probe_enc], candidate_enc)[0])
             if best_distance is None or dist < best_distance:
+                if best_distance is not None:
+                    if second_best_distance is None or best_distance < second_best_distance:
+                        second_best_distance = best_distance
                 best_distance = dist
                 best_user_id = int(user_id)
+            elif second_best_distance is None or dist < second_best_distance:
+                second_best_distance = dist
 
         # Keep cache small and relevant to current candidate set.
         stale_keys = [key for key in cache.keys() if key not in seen_paths]
@@ -178,6 +187,18 @@ if __name__ == "__main__":
 
         if best_user_id is None or best_distance is None:
             out({"success": False, "matched": False, "user_id": None, "distance": None, "error": "Aucun compte facial utilisable."}, 1)
+
+        if second_best_distance is not None and (second_best_distance - best_distance) < ambiguity_margin:
+            out(
+                {
+                    "success": True,
+                    "matched": False,
+                    "user_id": None,
+                    "distance": best_distance,
+                    "error": "Reconnaissance ambigue. Rapprochez le visage et reessayez.",
+                },
+                0,
+            )
 
         matched = best_distance <= threshold
         out(

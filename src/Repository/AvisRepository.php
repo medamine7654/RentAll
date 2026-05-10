@@ -46,6 +46,46 @@ class AvisRepository extends ServiceEntityRepository
         return $result ? (float) $result : null;
     }
 
+    /**
+     * Retourne en une seule requete la moyenne et le nombre d'avis par logement.
+     *
+     * @param array<int, object> $logements
+     * @return array<int, array{average: ?float, total: int}>
+     */
+    public function getRatingsSummaryForLogements(array $logements): array
+    {
+        if ($logements === []) {
+            return [];
+        }
+
+        $rows = $this->createQueryBuilder('a')
+            ->select('IDENTITY(r.logement) AS logementId')
+            ->addSelect('AVG(a.note) AS averageRating')
+            ->addSelect('COUNT(a.id) AS totalAvis')
+            ->join('a.reservation', 'r')
+            ->where('r.logement IN (:logements)')
+            ->setParameter('logements', $logements)
+            ->groupBy('r.logement')
+            ->getQuery()
+            ->getArrayResult();
+
+        $summary = [];
+        foreach ($rows as $row) {
+            $id = (int) ($row['logementId'] ?? 0);
+            if ($id <= 0) {
+                continue;
+            }
+
+            $averageRaw = $row['averageRating'] ?? null;
+            $summary[$id] = [
+                'average' => $averageRaw !== null ? (float) $averageRaw : null,
+                'total' => (int) ($row['totalAvis'] ?? 0),
+            ];
+        }
+
+        return $summary;
+    }
+
     //    /**
     //     * @return Avis[] Returns an array of Avis objects
     //     */

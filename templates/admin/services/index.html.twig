@@ -1,0 +1,201 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Services - RentAdmin{% endblock %}
+
+{% block search_placeholder %}Rechercher un service...{% endblock %}
+
+{% block body %}
+<!-- Page Header -->
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+    <div>
+        <h1 class="text-2xl font-bold text-dark font-heading">Modération des services</h1>
+        <p class="text-gray-500 mt-1">Examiner et modérer les services proposés</p>
+    </div>
+</div>
+
+<!-- Services Table -->
+<div class="bg-white rounded-xl shadow-sm overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full">
+            <thead class="bg-gray-50 border-b border-gray-200">
+                <tr>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Service</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Catégorie</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Hôte</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Prix</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Durée</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Statut</th>
+                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+                {% for service in services %}
+                    <tr class="hover:bg-gray-50 transition-colors">
+                        <td class="px-4 py-3">
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 bg-gradient-to-br from-primary to-secondary rounded-lg flex items-center justify-center flex-shrink-0">
+                                    <i class="fas fa-briefcase text-white"></i>
+                                </div>
+                                <div>
+                                    <p class="font-medium text-dark">{{ service.name }}</p>
+                                    <p class="text-sm text-gray-500 flex items-center gap-1">
+                                        <i class="fas fa-map-marker-alt text-xs"></i>
+                                        {{ service.location }}
+                                    </p>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-4 py-3">
+                            {% if service.category %}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                    <i class="{{ service.category.icon }} mr-1"></i>
+                                    {{ service.category.name }}
+                                </span>
+                            {% else %}
+                                <span class="text-sm text-gray-400">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-4 py-3">
+                            <span class="text-sm">{{ service.host.name }}</span>
+                        </td>
+                        <td class="px-4 py-3">
+                            <span class="text-sm font-medium">{{ service.basePrice }}€</span>
+                        </td>
+                        <td class="px-4 py-3">
+                            <span class="text-sm text-gray-600">{{ service.durationMinutes }} min</span>
+                        </td>
+                        <td class="px-4 py-3">
+                            {% if service.isActive %}
+                                <span class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">Actif</span>
+                            {% else %}
+                                <span class="px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-medium">En attente</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-4 py-3 text-right">
+                            <div class="relative inline-block">
+                                <button class="p-2 hover:bg-gray-100 rounded-lg" onclick="toggleDropdown('service-dropdown-{{ service.id }}')">
+                                    <i class="fas fa-ellipsis-h text-gray-400"></i>
+                                </button>
+                                <div id="service-dropdown-{{ service.id }}" class="hidden absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                                    <a href="#" onclick="openServiceModal({{ service.id }})" class="flex items-center gap-2 px-4 py-2 text-sm text-dark hover:bg-gray-50">
+                                        <i class="fas fa-eye text-gray-400"></i>
+                                        Voir détails
+                                    </a>
+                                    {% if not service.isActive %}
+                                        <form method="post" action="{{ path('admin_service_approve', {id: service.id}) }}" class="block">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('approve' ~ service.id) }}">
+                                            <button type="submit" class="w-full flex items-center gap-2 px-4 py-2 text-sm text-green-600 hover:bg-gray-50 text-left">
+                                                <i class="fas fa-check-circle"></i>
+                                                Approuver
+                                            </button>
+                                        </form>
+                                    {% endif %}
+                                    <form method="post" action="{{ path('admin_service_hide', {id: service.id}) }}" class="block">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('hide' ~ service.id) }}">
+                                        <button type="submit" class="w-full flex items-center gap-2 px-4 py-2 text-sm text-dark hover:bg-gray-50 text-left">
+                                            <i class="fas fa-times-circle text-gray-400"></i>
+                                            Masquer
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="7" class="px-4 py-8 text-center text-gray-500">
+                            <i class="fas fa-inbox text-4xl mb-2 text-gray-300"></i>
+                            <p>Aucun service à modérer</p>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Service Details Modal -->
+<div id="service-modal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl max-w-3xl w-full max-h-[90vh] overflow-auto">
+        <div class="p-6 border-b border-gray-200 flex items-center justify-between">
+            <h3 class="text-xl font-semibold text-dark">Détails du service</h3>
+            <button onclick="closeServiceModal()" class="p-2 hover:bg-gray-100 rounded-lg">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="p-6 space-y-6" id="service-modal-content">
+            <!-- Content loaded via JS -->
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+<script>
+const servicesData = {{ services|map(s => {
+    id: s.id,
+    name: s.name,
+    description: s.description,
+    hostName: s.host.name,
+    basePrice: s.basePrice,
+    durationMinutes: s.durationMinutes,
+    location: s.location,
+    isActive: s.isActive,
+    createdAt: s.createdAt|date('Y-m-d')
+})|json_encode|raw }};
+
+function openServiceModal(serviceId) {
+    const service = servicesData.find(s => s.id === serviceId);
+    if (!service) return;
+    
+    document.getElementById('service-modal-content').innerHTML = `
+        <div class="grid grid-cols-1 gap-2">
+            <div class="w-full h-48 bg-gradient-to-br from-primary to-secondary rounded-lg flex items-center justify-center">
+                <i class="fas fa-briefcase text-white text-6xl"></i>
+            </div>
+        </div>
+        <div>
+            <h4 class="text-xl font-semibold text-dark">${service.name}</h4>
+            <div class="flex items-center gap-4 mt-2 text-sm text-gray-500">
+                <span><i class="fas fa-map-marker-alt mr-1"></i>${service.location}</span>
+                <span><i class="fas fa-euro-sign mr-1"></i>${service.basePrice}€</span>
+                <span><i class="fas fa-clock mr-1"></i>${service.durationMinutes} min</span>
+            </div>
+        </div>
+        <div class="bg-gray-50 rounded-lg p-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-bold">${service.hostName.charAt(0)}</div>
+                <div>
+                    <p class="font-medium">${service.hostName}</p>
+                    <p class="text-sm text-gray-500">Hôte</p>
+                </div>
+            </div>
+        </div>
+        <div>
+            <h5 class="font-medium mb-2">Description</h5>
+            <p class="text-gray-600">${service.description || 'Aucune description disponible'}</p>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+            <div class="bg-gray-50 rounded-lg p-4">
+                <p class="text-sm text-gray-500">Date de création</p>
+                <p class="text-lg font-semibold text-dark">${service.createdAt}</p>
+            </div>
+            <div class="bg-gray-50 rounded-lg p-4">
+                <p class="text-sm text-gray-500">Statut</p>
+                <p class="text-lg font-semibold ${service.isActive ? 'text-green-600' : 'text-yellow-600'}">${service.isActive ? 'Actif' : 'En attente'}</p>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('service-modal').classList.remove('hidden');
+}
+
+function closeServiceModal() {
+    document.getElementById('service-modal').classList.add('hidden');
+}
+
+document.getElementById('service-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeServiceModal();
+});
+</script>
+{% endblock %}

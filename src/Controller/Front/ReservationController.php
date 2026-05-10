@@ -61,7 +61,7 @@ class ReservationController extends AbstractController
             return $this->redirectToRoute('app_home');
         }
 
-        if (!$logement->isDisponible()) {
+        if (!$logement->isActive()) {
             $this->addFlash('error', 'Ce logement n\'est pas disponible.');
             return $this->redirectToRoute('app_home');
         }

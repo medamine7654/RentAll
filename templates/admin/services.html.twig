@@ -75,61 +75,50 @@
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Hôte</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Prix</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Statut</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Note</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Sign.</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Catégorie</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Durée</th>
                     <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-200">
-                {% for service in services|default([
-                    { id: 's1', title: 'Cours de cuisine française', description: 'Apprenez à cuisiner comme un chef', hostId: 'u1', hostName: 'Marie Dubois', status: 'approved', price: 85, category: 'Cuisine', location: 'Paris, France', createdAt: '2023-02-10', bookingsCount: 45, rating: 4.8, reportsCount: 0, image: 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=400' },
-                    { id: 's2', title: 'Séance de yoga au parc', description: 'Yoga en plein air pour tous niveaux', hostId: 'u6', hostName: 'Thomas Moreau', status: 'pending', price: 25, category: 'Sport', location: 'Lyon, France', createdAt: '2024-01-15', bookingsCount: 0, rating: 0, reportsCount: 0, image: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400' },
-                    { id: 's3', title: 'Visite guidée du Louvre', description: 'Découvrez les chefs-d\'œuvre du Louvre', hostId: 'u3', hostName: 'Sophie Bernard', status: 'suspended', price: 50, category: 'Tourisme', location: 'Paris, France', createdAt: '2023-04-20', bookingsCount: 120, rating: 3.2, reportsCount: 4, image: 'https://images.unsplash.com/photo-1499856871958-5b9627545d1a?w=400' },
-                    { id: 's4', title: 'Cours de photographie', description: 'Apprenez les bases de la photographie', hostId: 'u8', hostName: 'Nicolas Fournier', status: 'approved', price: 120, category: 'Art', location: 'Bordeaux, France', createdAt: '2023-07-05', bookingsCount: 28, rating: 4.9, reportsCount: 0, image: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=400' },
-                    { id: 's5', title: 'Massage relaxant à domicile', description: 'Massage professionnel à domicile', hostId: 'u3', hostName: 'Sophie Bernard', status: 'hidden', price: 90, category: 'Bien-être', location: 'Marseille, France', createdAt: '2023-09-12', bookingsCount: 15, rating: 2.5, reportsCount: 3, image: 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=400' },
-                ]) %}
+                {% for service in services %}
                     <tr class="hover:bg-gray-50 transition-colors">
                         <td class="px-4 py-3">
                             <div class="flex items-center gap-3">
-                                <img src="{{ service.image }}" alt="{{ service.title }}" class="w-12 h-12 object-cover rounded-lg">
+                                {% if service.imageName %}
+                                    <img src="/uploads/services/{{ service.imageName }}" alt="{{ service.name }}" class="w-12 h-12 object-cover rounded-lg">
+                                {% else %}
+                                    <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white">
+                                        <i class="fas fa-concierge-bell"></i>
+                                    </div>
+                                {% endif %}
                                 <div>
-                                    <p class="font-medium text-dark">{{ service.title }}</p>
+                                    <p class="font-medium text-dark">{{ service.name }}</p>
                                     <p class="text-sm text-gray-500 flex items-center gap-1">
                                         <i class="fas fa-map-marker-alt text-xs"></i>
-                                        {{ service.location }}
+                                        {{ service.location|default('N/A') }}
                                     </p>
                                 </div>
                             </div>
                         </td>
                         <td class="px-4 py-3">
-                            <span class="text-sm">{{ service.hostName }}</span>
+                            <span class="text-sm">{{ service.host ? service.host.firstName ~ ' ' ~ service.host.lastName : 'N/A' }}</span>
                         </td>
                         <td class="px-4 py-3">
-                            <span class="text-sm font-medium">{{ service.price }}€</span>
+                            <span class="text-sm font-medium">{{ service.basePrice }}€</span>
                         </td>
                         <td class="px-4 py-3">
-                            {% if service.status == 'approved' %}
-                                <span class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">Approuvé</span>
-                            {% elseif service.status == 'pending' %}
-                                <span class="px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-medium">En attente</span>
-                            {% elseif service.status == 'hidden' %}
-                                <span class="px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">Masqué</span>
+                            {% if service.isActive %}
+                                <span class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">Actif</span>
                             {% else %}
-                                <span class="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium">Suspendu</span>
+                                <span class="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium">Inactif</span>
                             {% endif %}
                         </td>
                         <td class="px-4 py-3">
-                            <div class="flex items-center gap-1">
-                                <i class="fas fa-star text-yellow-400 text-sm"></i>
-                                <span class="text-sm">{{ service.rating > 0 ? service.rating : '-' }}</span>
-                            </div>
+                            <span class="text-sm text-gray-500">{{ service.category ? service.category.name : '-' }}</span>
                         </td>
                         <td class="px-4 py-3">
-                            {% if service.reportsCount > 0 %}
-                                <span class="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium">{{ service.reportsCount }}</span>
-                            {% else %}
-                                <span class="px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">0</span>
-                            {% endif %}
+                            <span class="text-sm text-gray-500">{{ service.durationMinutes|default(0) }} min</span>
                         </td>
                         <td class="px-4 py-3 text-right">
                             <div class="relative inline-block">
@@ -141,7 +130,7 @@
                                         <i class="fas fa-eye text-gray-400"></i>
                                         Voir détails
                                     </a>
-                                    {% if service.status == 'pending' %}
+                                    {% if not service.isActive %}
                                         <form method="post" action="{{ path('admin_service_approve', {id: service.id}) }}" class="block" novalidate>
                                             <input type="hidden" name="_token" value="{{ csrf_token('approve' ~ service.id) }}">
                                             <button type="submit" class="w-full flex items-center gap-2 px-4 py-2 text-sm text-green-600 hover:bg-gray-50 text-left">
@@ -168,6 +157,13 @@
                             </div>
                         </td>
                     </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="7" class="px-4 py-8 text-center text-gray-500">
+                            <i class="fas fa-concierge-bell text-3xl mb-2"></i>
+                            <p>Aucun service trouvé</p>
+                        </td>
+                    </tr>
                 {% endfor %}
             </tbody>
         </table>
@@ -192,31 +188,41 @@
 
 {% block javascripts %}
 <script>
-const servicesData = {{ services|default([
-    { id: 's1', title: 'Cours de cuisine française', description: 'Apprenez à cuisiner comme un chef avec des recettes traditionnelles françaises.', hostId: 'u1', hostName: 'Marie Dubois', status: 'approved', price: 85, category: 'Cuisine', location: 'Paris, France', createdAt: '2023-02-10', bookingsCount: 45, rating: 4.8, reportsCount: 0, image: 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=400' },
-    { id: 's2', title: 'Séance de yoga au parc', description: 'Yoga en plein air pour tous niveaux dans un cadre magnifique.', hostId: 'u6', hostName: 'Thomas Moreau', status: 'pending', price: 25, category: 'Sport', location: 'Lyon, France', createdAt: '2024-01-15', bookingsCount: 0, rating: 0, reportsCount: 0, image: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400' },
-    { id: 's3', title: 'Visite guidée du Louvre', description: 'Découvrez les chefs-d\'œuvre du Louvre avec un guide expert.', hostId: 'u3', hostName: 'Sophie Bernard', status: 'suspended', price: 50, category: 'Tourisme', location: 'Paris, France', createdAt: '2023-04-20', bookingsCount: 120, rating: 3.2, reportsCount: 4, image: 'https://images.unsplash.com/photo-1499856871958-5b9627545d1a?w=400' },
-    { id: 's4', title: 'Cours de photographie', description: 'Apprenez les bases de la photographie avec un professionnel.', hostId: 'u8', hostName: 'Nicolas Fournier', status: 'approved', price: 120, category: 'Art', location: 'Bordeaux, France', createdAt: '2023-07-05', bookingsCount: 28, rating: 4.9, reportsCount: 0, image: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=400' },
-    { id: 's5', title: 'Massage relaxant à domicile', description: 'Massage professionnel dans le confort de votre maison.', hostId: 'u3', hostName: 'Sophie Bernard', status: 'hidden', price: 90, category: 'Bien-être', location: 'Marseille, France', createdAt: '2023-09-12', bookingsCount: 15, rating: 2.5, reportsCount: 3, image: 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=400' },
-])|json_encode|raw }};
+const servicesData = [
+{% for service in services %}
+    {
+        id: {{ service.id }},
+        name: {{ service.name|json_encode|raw }},
+        description: {{ service.description|default('')|json_encode|raw }},
+        hostName: {{ (service.host ? service.host.firstName ~ ' ' ~ service.host.lastName : 'N/A')|json_encode|raw }},
+        isActive: {{ service.isActive ? 'true' : 'false' }},
+        basePrice: {{ service.basePrice|default(0) }},
+        durationMinutes: {{ service.durationMinutes|default(0) }},
+        category: {{ (service.category ? service.category.name : 'N/A')|json_encode|raw }},
+        location: {{ service.location|default('N/A')|json_encode|raw }},
+        imageName: {{ service.imageName|default('')|json_encode|raw }}
+    }{{ not loop.last ? ',' : '' }}
+{% endfor %}
+];
 
 function openServiceModal(serviceId) {
-    const service = servicesData.find(s => s.id === serviceId);
+    const service = servicesData.find(s => s.id == serviceId);
     if (!service) return;
     
-    const statusLabels = { approved: 'Approuvé', pending: 'En attente', hidden: 'Masqué', suspended: 'Suspendu' };
-    const statusClass = { approved: 'bg-green-100 text-green-700', pending: 'bg-yellow-100 text-yellow-700', hidden: 'bg-gray-100 text-gray-700', suspended: 'bg-red-100 text-red-700' };
+    const imageHtml = service.imageName 
+        ? `<img src="/uploads/services/${service.imageName}" class="w-full h-32 object-cover rounded-lg">`
+        : `<div class="w-full h-32 bg-gradient-to-br from-green-500 to-teal-600 rounded-lg flex items-center justify-center text-white text-3xl"><i class="fas fa-concierge-bell"></i></div>`;
     
     document.getElementById('service-modal-content').innerHTML = `
         <div class="grid grid-cols-3 gap-2">
-            <img src="${service.image}" class="w-full h-32 object-cover rounded-lg">
+            ${imageHtml}
         </div>
         <div>
-            <h4 class="text-xl font-semibold text-dark">${service.title}</h4>
+            <h4 class="text-xl font-semibold text-dark">${service.name}</h4>
             <div class="flex items-center gap-4 mt-2 text-sm text-gray-500">
                 <span><i class="fas fa-map-marker-alt mr-1"></i>${service.location}</span>
-                <span><i class="fas fa-euro-sign mr-1"></i>${service.price}</span>
-                <span><i class="fas fa-star mr-1 text-yellow-400"></i>${service.rating > 0 ? service.rating + '/5' : 'Pas encore noté'}</span>
+                <span><i class="fas fa-euro-sign mr-1"></i>${service.basePrice}€</span>
+                <span><i class="fas fa-clock mr-1"></i>${service.durationMinutes} min</span>
             </div>
         </div>
         <div class="bg-gray-50 rounded-lg p-4">
@@ -230,24 +236,24 @@ function openServiceModal(serviceId) {
         </div>
         <div>
             <h5 class="font-medium mb-2">Description</h5>
-            <p class="text-gray-600">${service.description}</p>
+            <p class="text-gray-600">${service.description || 'Aucune description'}</p>
         </div>
         <div class="grid grid-cols-3 gap-4">
             <div class="bg-gray-50 rounded-lg p-4 text-center">
-                <p class="text-2xl font-bold text-primary">${service.bookingsCount}</p>
-                <p class="text-sm text-gray-500">Réservations</p>
+                <p class="text-2xl font-bold text-primary">${service.category}</p>
+                <p class="text-sm text-gray-500">Catégorie</p>
             </div>
             <div class="bg-gray-50 rounded-lg p-4 text-center">
-                <p class="text-2xl font-bold text-secondary">${service.rating || '-'}</p>
-                <p class="text-sm text-gray-500">Note moyenne</p>
+                <p class="text-2xl font-bold text-secondary">${service.durationMinutes} min</p>
+                <p class="text-sm text-gray-500">Durée</p>
             </div>
             <div class="bg-gray-50 rounded-lg p-4 text-center">
-                <p class="text-2xl font-bold ${service.reportsCount > 0 ? 'text-red-600' : 'text-gray-400'}">${service.reportsCount}</p>
-                <p class="text-sm text-gray-500">Signalements</p>
+                <p class="text-2xl font-bold ${service.isActive ? 'text-green-600' : 'text-red-600'}">${service.isActive ? 'Actif' : 'Inactif'}</p>
+                <p class="text-sm text-gray-500">Statut</p>
             </div>
         </div>
         <div class="flex gap-2">
-            ${service.status === 'pending' ? `
+            ${!service.isActive ? `
                 <button class="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
                     <i class="fas fa-check-circle mr-2"></i>Approuver
                 </button>

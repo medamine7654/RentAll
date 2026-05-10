@@ -1,0 +1,215 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Logements - RentAdmin{% endblock %}
+
+{% block search_placeholder %}Rechercher un logement...{% endblock %}
+
+{% block body %}
+<!-- Page Header -->
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+    <div>
+        <h1 class="text-2xl font-bold text-dark font-heading">Modération des logements</h1>
+        <p class="text-gray-500 mt-1">Examiner et modérer les propriétés proposées</p>
+    </div>
+</div>
+
+<!-- Logements Table -->
+<div class="bg-white rounded-xl shadow-sm overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full">
+            <thead class="bg-gray-50 border-b border-gray-200">
+                <tr>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Logement</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Catégorie</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Hôte</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Prix/Nuit</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Localisation</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Statut</th>
+                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+                {% for logement in logements %}
+                    <tr class="hover:bg-gray-50 transition-colors">
+                        <td class="px-4 py-3">
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-700 rounded-lg flex items-center justify-center flex-shrink-0">
+                                    <i class="fas fa-home text-white"></i>
+                                </div>
+                                <div>
+                                    <p class="font-medium text-dark">{{ logement.name }}</p>
+                                    <p class="text-sm text-gray-500 flex items-center gap-1">
+                                        <i class="fas fa-map-marker-alt text-xs"></i>
+                                        {{ logement.fullLocation }}
+                                    </p>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-4 py-3">
+                            <span class="text-sm text-gray-500">{{ logement.type ?? '-' }}</span>
+                        </td>
+                        <td class="px-4 py-3">
+                            <span class="text-sm">{{ logement.host ? logement.host.name : '-' }}</span>
+                        </td>
+                        <td class="px-4 py-3">
+                            <span class="text-sm font-medium">{{ logement.pricePerNight }}€</span>
+                        </td>
+                        <td class="px-4 py-3">
+                            <span class="text-sm text-gray-600">{{ logement.city ?? '' }}{% if logement.country %}, {{ logement.country }}{% endif %}</span>
+                        </td>
+                        <td class="px-4 py-3">
+                            {% if logement.isActive %}
+                                <span class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">Actif</span>
+                            {% else %}
+                                <span class="px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-medium">En attente</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-4 py-3 text-right">
+                            <div class="relative inline-block">
+                                <button class="p-2 hover:bg-gray-100 rounded-lg" onclick="toggleDropdown('logement-dropdown-{{ logement.id }}')">
+                                    <i class="fas fa-ellipsis-h text-gray-400"></i>
+                                </button>
+                                <div id="logement-dropdown-{{ logement.id }}" class="hidden absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                                    <a href="#" onclick="openLogementModal({{ logement.id }})" class="flex items-center gap-2 px-4 py-2 text-sm text-dark hover:bg-gray-50">
+                                        <i class="fas fa-eye text-gray-400"></i>
+                                        Voir détails
+                                    </a>
+                                    {% if not logement.isActive %}
+                                        <form method="post" action="{{ path('admin_logement_approve', {id: logement.id}) }}" class="block">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('approve' ~ logement.id) }}">
+                                            <button type="submit" class="w-full flex items-center gap-2 px-4 py-2 text-sm text-green-600 hover:bg-gray-50 text-left">
+                                                <i class="fas fa-check-circle"></i>
+                                                Approuver
+                                            </button>
+                                        </form>
+                                    {% endif %}
+                                    <form method="post" action="{{ path('admin_logement_hide', {id: logement.id}) }}" class="block">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('hide' ~ logement.id) }}">
+                                        <button type="submit" class="w-full flex items-center gap-2 px-4 py-2 text-sm text-dark hover:bg-gray-50 text-left">
+                                            <i class="fas fa-times-circle text-gray-400"></i>
+                                            Masquer
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="7" class="px-4 py-8 text-center text-gray-500">
+                            <i class="fas fa-inbox text-4xl mb-2 text-gray-300"></i>
+                            <p>Aucun logement à modérer</p>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Logement Details Modal -->
+<div id="logement-modal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl max-w-3xl w-full max-h-[90vh] overflow-auto">
+        <div class="p-6 border-b border-gray-200 flex items-center justify-between">
+            <h3 class="text-xl font-semibold text-dark">Détails du logement</h3>
+            <button onclick="closeLogementModal()" class="p-2 hover:bg-gray-100 rounded-lg">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="p-6 space-y-6" id="logement-modal-content">
+            <!-- Content loaded via JS -->
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+<script>
+const logementsData = {{ logements|map(l => {
+    id: l.id,
+    name: l.name,
+    description: l.description,
+    hostName: l.host ? l.host.name : 'N/A',
+    pricePerNight: l.pricePerNight,
+    city: l.city,
+    country: l.country,
+    numberOfRooms: l.numberOfRooms,
+    numberOfBeds: l.numberOfBeds,
+    numberOfBathrooms: l.numberOfBathrooms,
+    maxGuests: l.maxGuests,
+    squareMeters: l.squareMeters,
+    isActive: l.isActive
+})|json_encode|raw }};
+
+function openLogementModal(logementId) {
+    const logement = logementsData.find(l => l.id === logementId);
+    if (!logement) return;
+    
+    document.getElementById('logement-modal-content').innerHTML = `
+        <div class="grid grid-cols-1 gap-2">
+            <div class="w-full h-48 bg-gradient-to-br from-purple-500 to-purple-700 rounded-lg flex items-center justify-center">
+                <i class="fas fa-home text-white text-6xl"></i>
+            </div>
+        </div>
+        <div>
+            <h4 class="text-xl font-semibold text-dark">${logement.name}</h4>
+            <div class="flex items-center gap-4 mt-2 text-sm text-gray-500">
+                <span><i class="fas fa-map-marker-alt mr-1"></i>${logement.city || ''}, ${logement.country || ''}</span>
+                <span><i class="fas fa-euro-sign mr-1"></i>${logement.pricePerNight}€/nuit</span>
+            </div>
+        </div>
+        <div class="bg-gray-50 rounded-lg p-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-purple-600 text-white flex items-center justify-center font-bold">${logement.hostName.charAt(0)}</div>
+                <div>
+                    <p class="font-medium">${logement.hostName}</p>
+                    <p class="text-sm text-gray-500">Hôte</p>
+                </div>
+            </div>
+        </div>
+        <div>
+            <h5 class="font-medium mb-2">Description</h5>
+            <p class="text-gray-600">${logement.description || 'Aucune description disponible'}</p>
+        </div>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            ${logement.numberOfRooms ? `<div class="bg-gray-50 rounded-lg p-4">
+                <p class="text-sm text-gray-500">Chambres</p>
+                <p class="text-lg font-semibold text-dark">${logement.numberOfRooms}</p>
+            </div>` : ''}
+            ${logement.numberOfBeds ? `<div class="bg-gray-50 rounded-lg p-4">
+                <p class="text-sm text-gray-500">Lits</p>
+                <p class="text-lg font-semibold text-dark">${logement.numberOfBeds}</p>
+            </div>` : ''}
+            ${logement.numberOfBathrooms ? `<div class="bg-gray-50 rounded-lg p-4">
+                <p class="text-sm text-gray-500">Salles de bain</p>
+                <p class="text-lg font-semibold text-dark">${logement.numberOfBathrooms}</p>
+            </div>` : ''}
+            ${logement.maxGuests ? `<div class="bg-gray-50 rounded-lg p-4">
+                <p class="text-sm text-gray-500">Invités max</p>
+                <p class="text-lg font-semibold text-dark">${logement.maxGuests}</p>
+            </div>` : ''}
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+            <div class="bg-gray-50 rounded-lg p-4">
+                <p class="text-sm text-gray-500">Surface</p>
+                <p class="text-lg font-semibold text-dark">${logement.squareMeters ? logement.squareMeters + ' m²' : 'N/A'}</p>
+            </div>
+            <div class="bg-gray-50 rounded-lg p-4">
+                <p class="text-sm text-gray-500">Statut</p>
+                <p class="text-lg font-semibold ${logement.isActive ? 'text-green-600' : 'text-yellow-600'}">${logement.isActive ? 'Actif' : 'En attente'}</p>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('logement-modal').classList.remove('hidden');
+}
+
+function closeLogementModal() {
+    document.getElementById('logement-modal').classList.add('hidden');
+}
+
+document.getElementById('logement-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeLogementModal();
+});
+</script>
+{% endblock %}

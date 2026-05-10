@@ -116,47 +116,8 @@ class CovoiturageController extends AbstractController
     {
         $this->denyAccessUnlessGranted('ROLE_USER');
 
-        if (!$this->isCsrfTokenValid('book-covoiturage' . $trip->getId(), (string) $request->request->get('_token'))) {
-            $this->addFlash('error', 'Requete invalide.');
-
-            return $this->redirectToRoute('app_covoiturage');
-        }
-
-        $user = $this->getUser();
-        if (!$user instanceof User) {
-            throw $this->createAccessDeniedException('Utilisateur non authentifie.');
-        }
-
-        if ($trip->getConducteur()?->getId() === $user->getId()) {
-            $this->addFlash('warning', 'Vous ne pouvez pas reserver votre propre covoiturage.');
-
-            return $this->redirectToRoute('app_covoiturage');
-        }
-
-        if ($participantRepository->isUserParticipant($user, $trip)) {
-            $this->addFlash('warning', 'Vous avez deja reserve ce covoiturage.');
-
-            return $this->redirectToRoute('app_covoiturage');
-        }
-
-        $currentCount = $participantRepository->countParticipantsByTrip($trip);
-        if ($currentCount >= (int) $trip->getPlaces()) {
-            $this->addFlash('error', 'Ce covoiturage est complet.');
-
-            return $this->redirectToRoute('app_covoiturage');
-        }
-
-        $participant = new Participant();
-        $participant->setPassager($user);
-        $participant->setCovoiturage($trip);
-        $participant->setStatut('en_attente'); // Demande en attente de validation
-        $participant->setDateCreation(new \DateTime());
-
-        $entityManager->persist($participant);
-        $entityManager->flush();
-
-        $this->addFlash('success', 'Demande de participation envoyée avec succès. Le conducteur doit maintenant accepter votre demande.');
-
+        // Participant table not available in current DB — feature disabled
+        $this->addFlash('warning', 'La réservation de covoiturage n\'est pas disponible pour le moment.');
         return $this->redirectToRoute('app_covoiturage');
     }
 
@@ -170,29 +131,8 @@ class CovoiturageController extends AbstractController
     {
         $this->denyAccessUnlessGranted('ROLE_USER');
 
-        if (!$this->isCsrfTokenValid('cancel-covoiturage' . $trip->getId(), (string) $request->request->get('_token'))) {
-            $this->addFlash('error', 'Requete invalide.');
-
-            return $this->redirectToRoute('app_covoiturage');
-        }
-
-        $user = $this->getUser();
-        if (!$user instanceof User) {
-            throw $this->createAccessDeniedException('Utilisateur non authentifie.');
-        }
-
-        $participant = $participantRepository->findOneByUserAndTrip($user, $trip);
-        if (!$participant instanceof Participant) {
-            $this->addFlash('warning', 'Aucune reservation a annuler pour ce trajet.');
-
-            return $this->redirectToRoute('app_covoiturage');
-        }
-
-        $entityManager->remove($participant);
-        $entityManager->flush();
-
-        $this->addFlash('success', 'Reservation annulee avec succes.');
-
+        // Participant table not available in current DB — feature disabled
+        $this->addFlash('warning', 'L\'annulation de covoiturage n\'est pas disponible pour le moment.');
         return $this->redirectToRoute('app_covoiturage');
     }
 
@@ -243,46 +183,7 @@ class CovoiturageController extends AbstractController
     ): Response
     {
         $this->denyAccessUnlessGranted('ROLE_USER');
-
-        $participant = $participantRepository->find($id);
-
-        if (!$participant) {
-            $this->addFlash('error', 'Participant introuvable.');
-            return $this->redirectToRoute('app_covoiturage_my_trips');
-        }
-
-        $user = $this->getUser();
-        if (!$user instanceof User) {
-            throw $this->createAccessDeniedException('Utilisateur non authentifie.');
-        }
-
-        // Vérifier que l'utilisateur est bien le conducteur
-        if ($participant->getCovoiturage()->getConducteur()->getId() !== $user->getId()) {
-            $this->addFlash('error', 'Vous n\'êtes pas autorisé à accepter ce participant.');
-            return $this->redirectToRoute('app_covoiturage_my_trips');
-        }
-
-        // Vérifier le token CSRF
-        if (!$this->isCsrfTokenValid('accept-participant' . $participant->getId(), (string) $request->request->get('_token'))) {
-            $this->addFlash('error', 'Requête invalide.');
-            return $this->redirectToRoute('app_covoiturage_my_trips');
-        }
-
-        // Vérifier qu'il reste des places
-        $confirmedCount = $participantRepository->count([
-            'covoiturage' => $participant->getCovoiturage(),
-            'statut' => 'confirme'
-        ]);
-
-        if ($confirmedCount >= $participant->getCovoiturage()->getPlaces()) {
-            $this->addFlash('error', 'Plus de places disponibles pour ce trajet.');
-            return $this->redirectToRoute('app_covoiturage_my_trips');
-        }
-
-        $participant->setStatut('confirme');
-        $entityManager->flush();
-
-        $this->addFlash('success', 'Participant accepté avec succès.');
+        $this->addFlash('warning', 'La gestion des participants n\'est pas disponible pour le moment.');
         return $this->redirectToRoute('app_covoiturage_my_trips');
     }
 
@@ -295,35 +196,7 @@ class CovoiturageController extends AbstractController
     ): Response
     {
         $this->denyAccessUnlessGranted('ROLE_USER');
-
-        $participant = $participantRepository->find($id);
-
-        if (!$participant) {
-            $this->addFlash('error', 'Participant introuvable.');
-            return $this->redirectToRoute('app_covoiturage_my_trips');
-        }
-
-        $user = $this->getUser();
-        if (!$user instanceof User) {
-            throw $this->createAccessDeniedException('Utilisateur non authentifie.');
-        }
-
-        // Vérifier que l'utilisateur est bien le conducteur
-        if ($participant->getCovoiturage()->getConducteur()->getId() !== $user->getId()) {
-            $this->addFlash('error', 'Vous n\'êtes pas autorisé à refuser ce participant.');
-            return $this->redirectToRoute('app_covoiturage_my_trips');
-        }
-
-        // Vérifier le token CSRF
-        if (!$this->isCsrfTokenValid('reject-participant' . $participant->getId(), (string) $request->request->get('_token'))) {
-            $this->addFlash('error', 'Requête invalide.');
-            return $this->redirectToRoute('app_covoiturage_my_trips');
-        }
-
-        $participant->setStatut('refuse');
-        $entityManager->flush();
-
-        $this->addFlash('success', 'Participant refusé.');
+        $this->addFlash('warning', 'La gestion des participants n\'est pas disponible pour le moment.');
         return $this->redirectToRoute('app_covoiturage_my_trips');
     }
 }

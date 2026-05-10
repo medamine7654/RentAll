@@ -5,6 +5,7 @@ namespace App\Controller\Front;
 use App\Entity\User;
 use App\Repository\UserRepository;
 use App\Service\FaceVerificationService;
+use App\Service\NotificationService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\File\Exception\FileException;
@@ -140,7 +141,8 @@ final class ProfileController extends AbstractController
     public function deactivate(
         Request $request,
         EntityManagerInterface $entityManager,
-        TokenStorageInterface $tokenStorage
+        TokenStorageInterface $tokenStorage,
+        ?NotificationService $notificationService = null
     ): Response {
         $this->denyAccessUnlessGranted('ROLE_USER');
 
@@ -156,6 +158,10 @@ final class ProfileController extends AbstractController
 
         $user->deactivateByUser();
         $entityManager->flush();
+
+        if ($notificationService) {
+            $notificationService->sendAccountDeactivatedNotification((int) $user->getId(), (string) $user->getEmail());
+        }
 
         $tokenStorage->setToken(null);
         $request->getSession()->invalidate();
@@ -174,23 +180,24 @@ final class ProfileController extends AbstractController
             return null;
         }
 
-        $maxSizeBytes = 2 * 1024 * 1024;
+        $maxSizeMb = $this->resolveUploadMaxMb();
+        $maxSizeBytes = $maxSizeMb * 1024 * 1024;
         if ($file->getSize() !== null && $file->getSize() > $maxSizeBytes) {
-            $this->addFlash('error', 'Image trop volumineuse (max 2MB).');
+            $this->addFlash('error', sprintf('Image trop volumineuse (max %dMB).', $maxSizeMb));
             return false;
         }
 
         $clientMimeType = strtolower((string) $file->getClientMimeType());
         $clientExtension = strtolower((string) $file->getClientOriginalExtension());
 
-        $allowedMimeTypes = ['image/jpeg', 'image/jpg', 'image/png'];
-        $allowedExtensions = ['jpg', 'jpeg', 'png'];
+        $allowedMimeTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+        $allowedExtensions = ['jpg', 'jpeg', 'png', 'webp'];
 
         if (
             !in_array($clientMimeType, $allowedMimeTypes, true)
             && !in_array($clientExtension, $allowedExtensions, true)
         ) {
-            $this->addFlash('error', 'Format d image invalide. Utilisez JPG ou PNG.');
+            $this->addFlash('error', 'Format d image invalide. Utilisez JPG, PNG ou WEBP.');
             return false;
         }
 
@@ -198,7 +205,7 @@ final class ProfileController extends AbstractController
         $safeFilename = (string) $slugger->slug($originalFilename ?: $filenamePrefix);
         $extension = in_array($clientExtension, $allowedExtensions, true)
             ? $clientExtension
-            : ($clientMimeType === 'image/png' ? 'png' : 'jpg');
+            : ($clientMimeType === 'image/png' ? 'png' : ($clientMimeType === 'image/webp' ? 'webp' : 'jpg'));
         $newFilename = sprintf('%s-%s.%s', $safeFilename, uniqid('', true), $extension);
 
         $uploadDir = $this->getParameter('kernel.project_dir') . '/public/uploads/' . trim($subdirectory, '/');
@@ -214,5 +221,19 @@ final class ProfileController extends AbstractController
         }
 
         return '/uploads/' . trim($subdirectory, '/') . '/' . $newFilename;
+    }
+
+    private function resolveUploadMaxMb(): int
+    {
+        $raw = $_ENV['PROFILE_UPLOAD_MAX_MB'] ?? $_SERVER['PROFILE_UPLOAD_MAX_MB'] ?? '8';
+        $value = is_numeric($raw) ? (int) $raw : 8;
+        if ($value < 2) {
+            return 2;
+        }
+        if ($value > 20) {
+            return 20;
+        }
+
+        return $value;
     }
 }

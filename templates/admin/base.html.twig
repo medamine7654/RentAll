@@ -109,27 +109,44 @@
     <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
     <script>
         // Define functions in global scope so they can be called from onclick handlers
-        
         // Add notification to dropdown
         function addNotification(data) {
             const dropdown = document.getElementById('notifications-dropdown');
             if (!dropdown) return;
-            
+
             const container = dropdown.querySelector('.max-h-64');
             if (!container) return;
-            
+
             // Remove "no notifications" message if present
             const emptyMsg = container.querySelector('.text-center');
             if (emptyMsg) {
                 emptyMsg.remove();
             }
-            
+
             // Check if notification already exists
             const existingNotif = container.querySelector(`[data-notif-id="${data.type}-${data.id}"]`);
             if (existingNotif) {
                 return; // Avoid duplicates
             }
-            
+
+            const typeLabel = data.type === 'reservation'
+                ? 'Reservation'
+                : (data.type === 'covoiturage' ? 'Covoiturage' : 'Compte');
+            const actionsHtml = (data.type === 'reservation' || data.type === 'covoiturage')
+                ? `
+                    <div class="flex gap-2">
+                        <button onclick="handleConfirm('${data.type}', ${data.id}, this)"
+                                class="flex-1 px-3 py-1.5 text-xs bg-green-500 text-white rounded hover:bg-green-600 transition-colors">
+                            Confirmer
+                        </button>
+                        <button onclick="handleReject('${data.type}', ${data.id}, this)"
+                                class="flex-1 px-3 py-1.5 text-xs bg-red-500 text-white rounded hover:bg-red-600 transition-colors">
+                            Rejeter
+                        </button>
+                    </div>
+                `
+                : '';
+
             // Create notification element
             const notifEl = document.createElement('div');
             notifEl.className = 'p-3 hover:bg-gray-50 border-b border-gray-100';
@@ -137,30 +154,46 @@
             notifEl.innerHTML = `
                 <div class="flex items-center justify-between gap-2 mb-2">
                     <span class="text-sm font-medium">${data.title}</span>
-                    <span class="px-1.5 py-0.5 text-xs bg-blue-100 text-blue-700 rounded">${data.type === 'reservation' ? 'RÃ©servation' : 'Covoiturage'}</span>
+                    <span class="px-1.5 py-0.5 text-xs bg-blue-100 text-blue-700 rounded">${typeLabel}</span>
                 </div>
                 <p class="text-xs text-gray-600 mb-2">${data.message}</p>
-                <div class="flex gap-2">
-                    <button onclick="handleConfirm('${data.type}', ${data.id}, this)" 
-                            class="flex-1 px-3 py-1.5 text-xs bg-green-500 text-white rounded hover:bg-green-600 transition-colors">
-                        âœ… Confirmer
-                    </button>
-                    <button onclick="handleReject('${data.type}', ${data.id}, this)" 
-                            class="flex-1 px-3 py-1.5 text-xs bg-red-500 text-white rounded hover:bg-red-600 transition-colors">
-                        âŒ Rejeter
-                    </button>
-                </div>
+                ${actionsHtml}
             `;
-            
+
             // Insert at the top
             container.insertBefore(notifEl, container.firstChild);
-            
+
             // Update badge
             updateNotificationBadge();
         }
-        
         // Show toast notification
         function showToast(data) {
+            const actionsHtml = (data.type === 'reservation' || data.type === 'covoiturage')
+                ? `
+                    <div class="flex gap-2">
+                        <button onclick="handleConfirm('${data.type}', ${data.id}, this)"
+                                class="px-3 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600">
+                            Confirmer
+                        </button>
+                        <button onclick="handleReject('${data.type}', ${data.id}, this)"
+                                class="px-3 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600">
+                            Rejeter
+                        </button>
+                        <button onclick="this.closest('.animate-slide-in').remove()"
+                                class="px-3 py-1 text-xs bg-gray-200 text-gray-700 rounded hover:bg-gray-300">
+                            Fermer
+                        </button>
+                    </div>
+                `
+                : `
+                    <div class="flex gap-2">
+                        <button onclick="this.closest('.animate-slide-in').remove()"
+                                class="px-3 py-1 text-xs bg-gray-200 text-gray-700 rounded hover:bg-gray-300">
+                            Fermer
+                        </button>
+                    </div>
+                `;
+
             const toast = document.createElement('div');
             toast.className = 'fixed top-20 right-4 z-50 bg-white rounded-lg shadow-xl border border-gray-200 p-4 max-w-sm animate-slide-in';
             toast.innerHTML = `
@@ -171,26 +204,13 @@
                     <div class="flex-1">
                         <h4 class="font-medium text-sm mb-1">${data.title}</h4>
                         <p class="text-xs text-gray-600 mb-3">${data.message}</p>
-                        <div class="flex gap-2">
-                            <button onclick="handleConfirm('${data.type}', ${data.id}, this)" 
-                                    class="px-3 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600">
-                                Confirmer
-                            </button>
-                            <button onclick="handleReject('${data.type}', ${data.id}, this)" 
-                                    class="px-3 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600">
-                                Rejeter
-                            </button>
-                            <button onclick="this.closest('.animate-slide-in').remove()" 
-                                    class="px-3 py-1 text-xs bg-gray-200 text-gray-700 rounded hover:bg-gray-300">
-                                Fermer
-                            </button>
-                        </div>
+                        ${actionsHtml}
                     </div>
                 </div>
             `;
-            
+
             document.body.appendChild(toast);
-            
+
             // Auto-remove after 30 seconds
             setTimeout(() => {
                 if (toast.parentElement) {
@@ -198,7 +218,6 @@
                 }
             }, 30000);
         }
-        
         // Handle confirm action
         async function handleConfirm(type, id, button) {
             button.disabled = true;
@@ -384,6 +403,12 @@
                     addNotification(data);
                     showToast(data);
                 });
+
+                // Listen for account deactivation notifications
+                channel.bind('account-deactivated', function(data) {
+                    addNotification(data);
+                    showToast(data);
+                });
             } catch (error) {
                 console.error('Pusher initialization failed:', error);
             }
@@ -444,3 +469,4 @@
     {% block javascripts %}{% endblock %}
 </body>
 </html>
+

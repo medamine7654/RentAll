@@ -6,7 +6,6 @@ use App\Entity\Reservation;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\DateType;
 use Symfony\Component\Form\Extension\Core\Type\IntegerType;
-use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -53,15 +52,6 @@ class ReservationType extends AbstractType
                     new Assert\NotBlank(['message' => 'Le nombre de personnes est obligatoire']),
                     new Assert\Positive(['message' => 'Le nombre de personnes doit être positif']),
                 ]
-            ])
-            ->add('notesSpeciales', TextareaType::class, [
-                'label' => 'Notes ou demandes spéciales (optionnel)',
-                'required' => false,
-                'attr' => [
-                    'class' => 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500',
-                    'rows' => 3,
-                    'placeholder' => 'Ex: Arrivée tardive, allergies, demandes particulières...',
-                ],
             ]);
     }
 

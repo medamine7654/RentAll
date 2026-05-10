@@ -3,7 +3,12 @@
 namespace App\Controller\Back;
 
 use App\Entity\User;
+use App\Entity\Service;
+use App\Entity\Tool;
 use App\Repository\UserRepository;
+use App\Repository\ServiceRepository;
+use App\Repository\ToolRepository;
+use App\Repository\CategoryRepository;
 use App\Service\PdfGenerator;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -35,7 +40,9 @@ class AdminController extends AbstractController
     #[Route('/', name: 'admin_dashboard')]
     public function dashboard(
         UserRepository $userRepository,
-        EntityManagerInterface $entityManager
+        EntityManagerInterface $entityManager,
+        ServiceRepository $serviceRepository,
+        ToolRepository $toolRepository
     ): Response
     {
         $userStats = $userRepository->getAdminStats();
@@ -70,12 +77,12 @@ class AdminController extends AbstractController
             'totalHosts' => $userStats['hosts'],
             'totalGuests' => $userStats['guests'],
             'totalLogements' => $totalLogements,
-            'totalServices' => 0, // À implémenter si vous avez une entité Service
-            'totalTools' => 0, // À implémenter si vous avez une entité Tool
+            'totalServices' => $serviceRepository->count([]),
+            'totalTools' => $toolRepository->count([]),
             'totalBookings' => $totalReservations,
-            'totalToolRentals' => 0, // À implémenter
-            'pendingReports' => 0, // À implémenter si vous avez une entité Report
-            'flaggedAccounts' => 0, // À implémenter
+            'totalToolRentals' => $toolRepository->count(['isActive' => true]),
+            'pendingReports' => $serviceRepository->count(['isActive' => false]) + $toolRepository->count(['isActive' => false]),
+            'flaggedAccounts' => $userRepository->count(['accountStatus' => User::STATUS_SUSPENDED]),
             'monthlyRevenue' => round($monthlyRevenue, 2),
             'cancellationRate' => $cancellationRate,
             'reservationsConfirmees' => $reservationsConfirmees,
@@ -206,19 +213,32 @@ class AdminController extends AbstractController
      * Services moderation
      */
     #[Route('/services', name: 'admin_services')]
-    public function services(Request $request): Response
+    public function services(Request $request, ServiceRepository $serviceRepository): Response
     {
         $tab = $request->query->get('tab', 'all');
         $search = $request->query->get('search');
         $status = $request->query->get('status');
 
-        // Fetch services from your repository
-        // $services = $this->serviceRepository->findByFilters($tab, $search, $status);
+        $services = $serviceRepository->findAllForAdmin();
+
+        // Filter by tab
+        if ($tab === 'pending') {
+            $services = array_filter($services, fn($s) => !$s->getIsActive());
+        } elseif ($tab === 'reported') {
+            $services = array_filter($services, fn($s) => !$s->getIsActive());
+        }
+
+        // Filter by search
+        if ($search) {
+            $services = array_filter($services, fn($s) => stripos($s->getName(), $search) !== false || stripos($s->getDescription(), $search) !== false);
+        }
+
+        $pendingCount = $serviceRepository->count(['isActive' => false]);
 
         return $this->render('admin/services.html.twig', [
-            // 'services' => $services,
-            'pending_count' => 1,
-            'reported_count' => 1,
+            'services' => array_values($services),
+            'pending_count' => $pendingCount,
+            'reported_count' => $pendingCount,
         ]);
     }
 
@@ -226,11 +246,15 @@ class AdminController extends AbstractController
      * Approve a service
      */
     #[Route('/services/{id}/approve', name: 'admin_service_approve', methods: ['POST'])]
-    public function approveService(string $id, Request $request): Response
+    public function approveService(string $id, Request $request, EntityManagerInterface $em, ServiceRepository $serviceRepository): Response
     {
         if ($this->isCsrfTokenValid('approve' . $id, $request->request->get('_token'))) {
-            // Approve service logic here
-            $this->addFlash('success', 'Le service a été approuvé.');
+            $service = $serviceRepository->find($id);
+            if ($service) {
+                $service->setIsActive(true);
+                $em->flush();
+                $this->addFlash('success', 'Le service a été approuvé.');
+            }
         }
 
         return $this->redirectToRoute('admin_services');
@@ -240,11 +264,15 @@ class AdminController extends AbstractController
      * Hide a service
      */
     #[Route('/services/{id}/hide', name: 'admin_service_hide', methods: ['POST'])]
-    public function hideService(string $id, Request $request): Response
+    public function hideService(string $id, Request $request, EntityManagerInterface $em, ServiceRepository $serviceRepository): Response
     {
         if ($this->isCsrfTokenValid('hide' . $id, $request->request->get('_token'))) {
-            // Hide service logic here
-            $this->addFlash('success', 'Le service a été masqué.');
+            $service = $serviceRepository->find($id);
+            if ($service) {
+                $service->setIsActive(false);
+                $em->flush();
+                $this->addFlash('success', 'Le service a été masqué.');
+            }
         }
 
         return $this->redirectToRoute('admin_services');
@@ -254,11 +282,15 @@ class AdminController extends AbstractController
      * Suspend a service
      */
     #[Route('/services/{id}/suspend', name: 'admin_service_suspend', methods: ['POST'])]
-    public function suspendService(string $id, Request $request): Response
+    public function suspendService(string $id, Request $request, EntityManagerInterface $em, ServiceRepository $serviceRepository): Response
     {
         if ($this->isCsrfTokenValid('suspend' . $id, $request->request->get('_token'))) {
-            // Suspend service logic here
-            $this->addFlash('success', 'Le service a été suspendu.');
+            $service = $serviceRepository->find($id);
+            if ($service) {
+                $service->setIsActive(false);
+                $em->flush();
+                $this->addFlash('success', 'Le service a été suspendu.');
+            }
         }
 
         return $this->redirectToRoute('admin_services');
@@ -268,15 +300,32 @@ class AdminController extends AbstractController
      * Tools moderation
      */
     #[Route('/tools', name: 'admin_tools')]
-    public function tools(Request $request): Response
+    public function tools(Request $request, ToolRepository $toolRepository): Response
     {
         $tab = $request->query->get('tab', 'all');
         $search = $request->query->get('search');
         $status = $request->query->get('status');
 
+        $tools = $toolRepository->findAllForAdmin();
+
+        // Filter by tab
+        if ($tab === 'maintenance') {
+            $tools = array_filter($tools, fn($t) => !$t->getIsActive());
+        } elseif ($tab === 'reported') {
+            $tools = array_filter($tools, fn($t) => !$t->getIsActive());
+        }
+
+        // Filter by search
+        if ($search) {
+            $tools = array_filter($tools, fn($t) => stripos($t->getName(), $search) !== false || stripos($t->getDescription(), $search) !== false);
+        }
+
+        $maintenanceCount = $toolRepository->count(['isActive' => false]);
+
         return $this->render('admin/tools.html.twig', [
-            'maintenance_count' => 1,
-            'reported_count' => 1,
+            'tools' => array_values($tools),
+            'maintenance_count' => $maintenanceCount,
+            'reported_count' => $maintenanceCount,
         ]);
     }
 
@@ -284,10 +333,15 @@ class AdminController extends AbstractController
      * Activate a tool
      */
     #[Route('/tools/{id}/activate', name: 'admin_tool_activate', methods: ['POST'])]
-    public function activateTool(string $id, Request $request): Response
+    public function activateTool(string $id, Request $request, EntityManagerInterface $em, ToolRepository $toolRepository): Response
     {
         if ($this->isCsrfTokenValid('activate' . $id, $request->request->get('_token'))) {
-            $this->addFlash('success', 'Le matériel a été réactivé.');
+            $tool = $toolRepository->find($id);
+            if ($tool) {
+                $tool->setIsActive(true);
+                $em->flush();
+                $this->addFlash('success', 'Le matériel a été réactivé.');
+            }
         }
 
         return $this->redirectToRoute('admin_tools');
@@ -297,10 +351,15 @@ class AdminController extends AbstractController
      * Hide a tool
      */
     #[Route('/tools/{id}/hide', name: 'admin_tool_hide', methods: ['POST'])]
-    public function hideTool(string $id, Request $request): Response
+    public function hideTool(string $id, Request $request, EntityManagerInterface $em, ToolRepository $toolRepository): Response
     {
         if ($this->isCsrfTokenValid('hide' . $id, $request->request->get('_token'))) {
-            $this->addFlash('success', 'Le matériel a été masqué.');
+            $tool = $toolRepository->find($id);
+            if ($tool) {
+                $tool->setIsActive(false);
+                $em->flush();
+                $this->addFlash('success', 'Le matériel a été masqué.');
+            }
         }
 
         return $this->redirectToRoute('admin_tools');
@@ -310,10 +369,15 @@ class AdminController extends AbstractController
      * Suspend a tool
      */
     #[Route('/tools/{id}/suspend', name: 'admin_tool_suspend', methods: ['POST'])]
-    public function suspendTool(string $id, Request $request): Response
+    public function suspendTool(string $id, Request $request, EntityManagerInterface $em, ToolRepository $toolRepository): Response
     {
         if ($this->isCsrfTokenValid('suspend' . $id, $request->request->get('_token'))) {
-            $this->addFlash('success', 'Le matériel a été suspendu.');
+            $tool = $toolRepository->find($id);
+            if ($tool) {
+                $tool->setIsActive(false);
+                $em->flush();
+                $this->addFlash('success', 'Le matériel a été suspendu.');
+            }
         }
 
         return $this->redirectToRoute('admin_tools');
@@ -563,16 +627,20 @@ class AdminController extends AbstractController
      * Reports and fraud monitoring
      */
     #[Route('/reports', name: 'admin_reports')]
-    public function reports(Request $request): Response
+    public function reports(Request $request, ServiceRepository $serviceRepository, ToolRepository $toolRepository): Response
     {
         $tab = $request->query->get('tab', 'reports');
         $search = $request->query->get('search');
         $status = $request->query->get('status');
 
+        $inactiveServices = $serviceRepository->count(['isActive' => false]);
+        $inactiveTools = $toolRepository->count(['isActive' => false]);
+        $totalInactive = $inactiveServices + $inactiveTools;
+
         return $this->render('admin/reports.html.twig', [
-            'pending_reports_count' => 3,
-            'critical_alerts_count' => 2,
-            'unread_alerts_count' => 3,
+            'pending_reports_count' => $totalInactive,
+            'critical_alerts_count' => $inactiveServices,
+            'unread_alerts_count' => $inactiveTools,
         ]);
     }
 

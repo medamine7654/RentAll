@@ -10,6 +10,10 @@ use Doctrine\Persistence\ManagerRegistry;
 
 /**
  * @extends ServiceEntityRepository<Participant>
+ *
+ * NOTE: The 'participant' table does not exist in the remote DB.
+ * All methods return safe empty values to prevent runtime errors.
+ * The participant/booking feature is disabled until the table is created.
  */
 class ParticipantRepository extends ServiceEntityRepository
 {
@@ -18,95 +22,28 @@ class ParticipantRepository extends ServiceEntityRepository
         parent::__construct($registry, Participant::class);
     }
 
-    //    /**
-    //     * @return Participant[] Returns an array of Participant objects
-    //     */
-    //    public function findByExampleField($value): array
-    //    {
-    //        return $this->createQueryBuilder('p')
-    //            ->andWhere('p.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->orderBy('p.id', 'ASC')
-    //            ->setMaxResults(10)
-    //            ->getQuery()
-    //            ->getResult()
-    //        ;
-    //    }
-
-    //    public function findOneBySomeField($value): ?Participant
-    //    {
-    //        return $this->createQueryBuilder('p')
-    //            ->andWhere('p.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
-
     public function isUserParticipant(User $user, Covoiturage $covoiturage): bool
     {
-        $count = (int) $this->createQueryBuilder('p')
-            ->select('COUNT(p.id)')
-            ->andWhere('p.passager = :user')
-            ->andWhere('p.covoiturage = :trip')
-            ->setParameter('user', $user)
-            ->setParameter('trip', $covoiturage)
-            ->getQuery()
-            ->getSingleScalarResult();
-
-        return $count > 0;
+        return false;
     }
 
     public function countParticipantsByTrip(Covoiturage $covoiturage): int
     {
-        return (int) $this->createQueryBuilder('p')
-            ->select('COUNT(p.id)')
-            ->andWhere('p.covoiturage = :trip')
-            ->andWhere('p.statut = :statut')
-            ->setParameter('trip', $covoiturage)
-            ->setParameter('statut', 'confirme')
-            ->getQuery()
-            ->getSingleScalarResult();
+        return 0;
     }
 
     public function findOneByUserAndTrip(User $user, Covoiturage $covoiturage): ?Participant
     {
-        return $this->createQueryBuilder('p')
-            ->andWhere('p.passager = :user')
-            ->andWhere('p.covoiturage = :trip')
-            ->setParameter('user', $user)
-            ->setParameter('trip', $covoiturage)
-            ->setMaxResults(1)
-            ->getQuery()
-            ->getOneOrNullResult();
+        return null;
     }
 
     /**
      * @param int[] $tripIds
-     * @return array<int, int> [tripId => participantCount]
+     * @return array<int, int>
      */
     public function getCountsByTripIds(array $tripIds): array
     {
-        if ($tripIds === []) {
-            return [];
-        }
-
-        $rows = $this->createQueryBuilder('p')
-            ->select('IDENTITY(p.covoiturage) AS tripId, COUNT(p.id) AS total')
-            ->andWhere('p.covoiturage IN (:tripIds)')
-            ->andWhere('p.statut = :statut')
-            ->setParameter('tripIds', $tripIds)
-            ->setParameter('statut', 'confirme')
-            ->groupBy('p.covoiturage')
-            ->getQuery()
-            ->getArrayResult();
-
-        $counts = [];
-        foreach ($rows as $row) {
-            $counts[(int) $row['tripId']] = (int) $row['total'];
-        }
-
-        return $counts;
+        return [];
     }
 
     /**
@@ -115,19 +52,22 @@ class ParticipantRepository extends ServiceEntityRepository
      */
     public function getBookedTripIdsForUser(User $user, array $tripIds): array
     {
-        if ($tripIds === []) {
-            return [];
-        }
+        return [];
+    }
 
-        $rows = $this->createQueryBuilder('p')
-            ->select('IDENTITY(p.covoiturage) AS tripId')
-            ->andWhere('p.passager = :user')
-            ->andWhere('p.covoiturage IN (:tripIds)')
-            ->setParameter('user', $user)
-            ->setParameter('tripIds', $tripIds)
-            ->getQuery()
-            ->getArrayResult();
+    /**
+     * Override findBy to avoid hitting the non-existent table.
+     */
+    public function findBy(array $criteria, ?array $orderBy = null, $limit = null, $offset = null): array
+    {
+        return [];
+    }
 
-        return array_map(static fn (array $row): int => (int) $row['tripId'], $rows);
+    /**
+     * Override count to avoid hitting the non-existent table.
+     */
+    public function count(array $criteria = []): int
+    {
+        return 0;
     }
 }

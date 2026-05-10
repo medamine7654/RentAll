@@ -16,32 +16,29 @@ class HomeController extends AbstractController
     public function index(Request $request, LogementRepository $logementRepository, AvisRepository $avisRepository): Response
     {
         $user = $this->getUser();
-        
+
         $filters = [
             'category' => $request->query->get('category'),
             'location' => $request->query->get('location'),
             'minPrice' => $request->query->get('minPrice'),
             'maxPrice' => $request->query->get('maxPrice'),
-            'guests' => $request->query->get('guests'),
+            'guests'   => $request->query->get('guests'),
         ];
 
-        // Fetch real logements from database
+        // isActive replaces the old 'disponible' field (no such column in DB)
         $queryBuilder = $logementRepository->createQueryBuilder('l')
-            ->where('l.disponible = :disponible')
-            ->setParameter('disponible', true);
+            ->where('l.isActive = :active')
+            ->setParameter('active', true);
 
-        // Si l'utilisateur est un HOST (et pas ADMIN), ne montrer que SES logements
+        // HOST sees only their own logements; regular USER sees others'
         if ($user && $this->isGranted('ROLE_HOST') && !$this->isGranted('ROLE_ADMIN')) {
             $queryBuilder->andWhere('l.proprietaire = :proprietaire')
                 ->setParameter('proprietaire', $user);
-        }
-        // Si l'utilisateur est un USER simple, ne pas montrer ses propres logements (s'il en a)
-        elseif ($user && !$this->isGranted('ROLE_HOST') && !$this->isGranted('ROLE_ADMIN')) {
+        } elseif ($user && !$this->isGranted('ROLE_HOST') && !$this->isGranted('ROLE_ADMIN')) {
             $queryBuilder->andWhere('l.proprietaire != :proprietaire')
                 ->setParameter('proprietaire', $user);
         }
 
-        // Apply filters
         if ($filters['location']) {
             $queryBuilder->andWhere('l.adresse LIKE :location OR l.titre LIKE :location')
                 ->setParameter('location', '%' . $filters['location'] . '%');
@@ -58,60 +55,54 @@ class HomeController extends AbstractController
         }
 
         if ($filters['guests']) {
-            $queryBuilder->andWhere('l.capacite >= :guests')
+            // maxGuests replaces the old 'capacite' field (no such column in DB)
+            $queryBuilder->andWhere('l.maxGuests >= :guests')
                 ->setParameter('guests', $filters['guests']);
         }
 
-        if ($filters['category']) {
-            $queryBuilder->andWhere('l.type = :type')
-                ->setParameter('type', $filters['category']);
-        }
+        // 'type' column doesn't exist in DB — category filter is skipped for now
+        // if ($filters['category']) { ... }
 
         $logements = $queryBuilder->getQuery()->getResult();
 
-        // Get ratings for each logement
-        $ratings = [];
+        // Avoid N+1 on avis: aggregate in one query
+        $ratings = $avisRepository->getRatingsSummaryForLogements($logements);
         foreach ($logements as $logement) {
-            $avgRating = $avisRepository->getAverageRatingForLogement($logement);
-            $totalAvis = count($avisRepository->findByLogement($logement));
-            $ratings[$logement->getId()] = [
-                'average' => $avgRating,
-                'total' => $totalAvis,
-            ];
+            $id = $logement->getId();
+            if (!isset($ratings[$id])) {
+                $ratings[$id] = ['average' => null, 'total' => 0];
+            }
         }
 
         return $this->render('front/home/index.html.twig', [
             'logements' => $logements,
-            'ratings' => $ratings,
-            'filters' => $filters,
+            'ratings'   => $ratings,
+            'filters'   => $filters,
             'isLoading' => false,
         ]);
     }
-    
+
     #[Route('/carte', name: 'app_map_view')]
     public function mapView(LogementRepository $logementRepository, CovoiturageRepository $covoiturageRepository): Response
     {
-        // Get all available logements with addresses
+        // isActive replaces the old 'disponible' field
         $logements = $logementRepository->createQueryBuilder('l')
-            ->where('l.disponible = :disponible')
+            ->where('l.isActive = :active')
             ->andWhere('l.adresse IS NOT NULL')
-            ->setParameter('disponible', true)
+            ->setParameter('active', true)
             ->getQuery()
             ->getResult();
-        
-        // Get all future covoiturage trips
+
         $covoiturages = $covoiturageRepository->createQueryBuilder('c')
             ->where('c.dateDepart > :now')
             ->setParameter('now', new \DateTime())
             ->orderBy('c.dateDepart', 'ASC')
             ->getQuery()
             ->getResult();
-        
+
         return $this->render('front/home/map.html.twig', [
-            'logements' => $logements,
+            'logements'    => $logements,
             'covoiturages' => $covoiturages,
         ]);
     }
 }
-
-

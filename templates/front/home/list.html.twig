@@ -1,0 +1,110 @@
+{% extends 'front/base.html.twig' %}
+
+{% block title %}Homes for Rent - RentAll{% endblock %}
+
+{% block body %}
+<div class="container mx-auto px-4 py-6">
+    <div class="max-w-6xl mx-auto">
+        {# Header #}
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">Homes for Rent</h1>
+            <p class="text-gray-600">Find your perfect temporary home</p>
+        </div>
+
+        {# Search and Filter Bar #}
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-8">
+            <div class="flex flex-wrap gap-4">
+                <div class="flex-1 min-w-[200px]">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                    <input type="text" placeholder="City or address" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                </div>
+                <div class="w-32">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Guests</label>
+                    <select class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        <option>1 guest</option>
+                        <option>2 guests</option>
+                        <option>3 guests</option>
+                        <option>4+ guests</option>
+                    </select>
+                </div>
+                <div class="w-40">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Max Price</label>
+                    <select class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        <option>Any price</option>
+                        <option>€50/night</option>
+                        <option>€100/night</option>
+                        <option>€150/night</option>
+                        <option>€200+/night</option>
+                    </select>
+                </div>
+                <div class="flex items-end">
+                    <button class="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                        Search
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        {# Results count #}
+        <p class="text-sm text-gray-600 mb-4">{{ homes|length }} homes found</p>
+
+        {# Homes grid #}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for home in homes %}
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
+                    {# Image placeholder #}
+                    <div class="h-48 bg-gray-200 flex items-center justify-center">
+                        <svg class="h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                        <span class="text-gray-500 ml-2">Home Image</span>
+                    </div>
+
+                    <div class="p-4">
+                        <div class="flex items-start justify-between mb-2">
+                            <h2 class="text-xl font-semibold text-gray-900 truncate">{{ home.title }}</h2>
+                            <p class="text-lg font-bold text-blue-600">€{{ home.pricePerNight }}<span class="text-sm font-normal text-gray-500">/night</span></p>
+                        </div>
+
+                        <p class="text-gray-600 text-sm mb-2 flex items-center">
+                            <svg class="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            </svg>
+                            {{ home.city }}, {{ home.country }}
+                        </p>
+
+                        <div class="flex items-center text-sm text-gray-500 mb-3">
+                            <span class="mr-3">{{ home.maxGuests }} guests</span>
+                            <span class="mr-3">•</span>
+                            <span class="mr-3">{{ home.bedrooms }} bedrooms</span>
+                            <span class="mr-3">•</span>
+                            <span>{{ home.beds }} beds</span>
+                        </div>
+
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <div class="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-xs">
+                                    {{ home.host.name|first|upper }}
+                                </div>
+                                <span class="ml-2 text-sm text-gray-600">{{ home.host.name }}</span>
+                            </div>
+                            <a href="{{ path('app_home_show', {'id': home.id}) }}" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                                View Details →
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <div class="col-span-3 text-center py-12">
+                    <svg class="h-16 w-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2 2 2 2-2 2 2 2-2 2 2 2-2 2 2 2-2 2 2 2-2 2 2 2-2 2 2"/>
+                    </svg>
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">No homes available</h3>
+                    <p class="text-gray-500">Check back later for new listings</p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

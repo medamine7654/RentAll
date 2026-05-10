@@ -7,6 +7,7 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: ReservationRepository::class)]
+#[ORM\Table(name: 'reservation')]
 class Reservation
 {
     #[ORM\Id]
@@ -15,36 +16,30 @@ class Reservation
     private ?int $id = null;
 
     #[ORM\ManyToOne(targetEntity: Logement::class)]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(name: 'logement_id', nullable: false)]
     private ?Logement $logement = null;
 
     #[ORM\ManyToOne(targetEntity: User::class)]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(name: 'locataire_id', nullable: false)]
     private ?User $locataire = null;
 
-    #[ORM\Column(type: Types::DATETIME_MUTABLE)]
+    #[ORM\Column(name: 'date_debut', type: Types::DATETIME_MUTABLE)]
     private ?\DateTimeInterface $dateDebut = null;
 
-    #[ORM\Column(type: Types::DATETIME_MUTABLE)]
+    #[ORM\Column(name: 'date_fin', type: Types::DATETIME_MUTABLE)]
     private ?\DateTimeInterface $dateFin = null;
 
-    #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2)]
+    #[ORM\Column(name: 'montant_total', type: Types::DECIMAL, precision: 10, scale: 2)]
     private ?string $montantTotal = null;
 
     #[ORM\Column(length: 50)]
     private ?string $statut = null;
 
-    #[ORM\Column(type: Types::DATETIME_MUTABLE)]
+    #[ORM\Column(name: 'date_creation', type: Types::DATETIME_MUTABLE, nullable: true)]
     private ?\DateTimeInterface $dateCreation = null;
 
-    #[ORM\OneToOne(mappedBy: 'reservation', targetEntity: Avis::class, cascade: ['persist', 'remove'])]
-    private ?Avis $avis = null;
-
-    #[ORM\Column(nullable: true)]
+    #[ORM\Column(name: 'nombre_personnes', nullable: true)]
     private ?int $nombrePersonnes = null;
-
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
-    private ?string $notesSpeciales = null;
 
     public function __construct()
     {
@@ -52,153 +47,51 @@ class Reservation
         $this->statut = 'en_attente';
     }
 
-    public function getId(): ?int
-    {
-        return $this->id;
-    }
+    public function getId(): ?int { return $this->id; }
 
-    public function getLogement(): ?Logement
-    {
-        return $this->logement;
-    }
+    public function getLogement(): ?Logement { return $this->logement; }
+    public function setLogement(?Logement $logement): static { $this->logement = $logement; return $this; }
 
-    public function setLogement(?Logement $logement): static
-    {
-        $this->logement = $logement;
-        return $this;
-    }
+    public function getLocataire(): ?User { return $this->locataire; }
+    public function setLocataire(?User $locataire): static { $this->locataire = $locataire; return $this; }
 
-    public function getLocataire(): ?User
-    {
-        return $this->locataire;
-    }
+    public function getDateDebut(): ?\DateTimeInterface { return $this->dateDebut; }
+    public function setDateDebut(\DateTimeInterface $dateDebut): static { $this->dateDebut = $dateDebut; return $this; }
 
-    public function setLocataire(?User $locataire): static
-    {
-        $this->locataire = $locataire;
-        return $this;
-    }
+    public function getDateFin(): ?\DateTimeInterface { return $this->dateFin; }
+    public function setDateFin(\DateTimeInterface $dateFin): static { $this->dateFin = $dateFin; return $this; }
 
-    public function getDateDebut(): ?\DateTimeInterface
-    {
-        return $this->dateDebut;
-    }
+    public function getMontantTotal(): ?string { return $this->montantTotal; }
+    public function setMontantTotal(string $montantTotal): static { $this->montantTotal = $montantTotal; return $this; }
 
-    public function setDateDebut(\DateTimeInterface $dateDebut): static
-    {
-        $this->dateDebut = $dateDebut;
-        return $this;
-    }
+    public function getStatut(): ?string { return $this->statut; }
+    public function setStatut(string $statut): static { $this->statut = $statut; return $this; }
 
-    public function getDateFin(): ?\DateTimeInterface
-    {
-        return $this->dateFin;
-    }
+    public function getDateCreation(): ?\DateTimeInterface { return $this->dateCreation; }
+    public function setDateCreation(\DateTimeInterface $dateCreation): static { $this->dateCreation = $dateCreation; return $this; }
 
-    public function setDateFin(\DateTimeInterface $dateFin): static
-    {
-        $this->dateFin = $dateFin;
-        return $this;
-    }
+    public function getNombrePersonnes(): ?int { return $this->nombrePersonnes; }
+    public function setNombrePersonnes(?int $nombrePersonnes): static { $this->nombrePersonnes = $nombrePersonnes; return $this; }
 
-    public function getMontantTotal(): ?string
-    {
-        return $this->montantTotal;
-    }
-
-    public function setMontantTotal(string $montantTotal): static
-    {
-        $this->montantTotal = $montantTotal;
-        return $this;
-    }
-
-    public function getStatut(): ?string
-    {
-        return $this->statut;
-    }
-
-    public function setStatut(string $statut): static
-    {
-        $this->statut = $statut;
-        return $this;
-    }
-
-    public function getDateCreation(): ?\DateTimeInterface
-    {
-        return $this->dateCreation;
-    }
-
-    public function setDateCreation(\DateTimeInterface $dateCreation): static
-    {
-        $this->dateCreation = $dateCreation;
-        return $this;
-    }
-
-    public function getAvis(): ?Avis
-    {
-        return $this->avis;
-    }
-
-    public function setAvis(?Avis $avis): static
-    {
-        // set the owning side of the relation if necessary
-        if ($avis !== null && $avis->getReservation() !== $this) {
-            $avis->setReservation($this);
-        }
-
-        $this->avis = $avis;
-        return $this;
-    }
-
-    /**
-     * Vérifie si la réservation est terminée
-     */
     public function isTerminee(): bool
     {
-        $now = new \DateTime();
-        return $this->dateFin < $now;
+        return $this->dateFin !== null && $this->dateFin < new \DateTime();
     }
 
-    /**
-     * Vérifie si la réservation peut être annulée (plus de 3 jours avant l'arrivée)
-     */
     public function peutEtreAnnulee(): bool
     {
-        $now = new \DateTime();
-        $dateDebut = clone $this->dateDebut;
-        $dateDebut->modify('-3 days');
-        
-        return $now < $dateDebut && $this->statut === 'confirmee';
+        if ($this->dateDebut === null || $this->statut !== 'confirmee') {
+            return false;
+        }
+        $limit = (clone $this->dateDebut)->modify('-3 days');
+        return new \DateTime() < $limit;
     }
 
-    /**
-     * Calcule le nombre de nuits
-     */
     public function getNombreNuits(): int
     {
-        $interval = $this->dateDebut->diff($this->dateFin);
-        return $interval->days;
-    }
-
-    public function getNombrePersonnes(): ?int
-    {
-        return $this->nombrePersonnes;
-    }
-
-    public function setNombrePersonnes(?int $nombrePersonnes): static
-    {
-        $this->nombrePersonnes = $nombrePersonnes;
-        return $this;
-    }
-
-    public function getNotesSpeciales(): ?string
-    {
-        return $this->notesSpeciales;
-    }
-
-    public function setNotesSpeciales(?string $notesSpeciales): static
-    {
-        $this->notesSpeciales = $notesSpeciales;
-        return $this;
+        if ($this->dateDebut === null || $this->dateFin === null) {
+            return 0;
+        }
+        return (int) $this->dateDebut->diff($this->dateFin)->days;
     }
 }

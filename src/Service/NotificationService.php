@@ -83,4 +83,28 @@ class NotificationService
             $this->logger->error('Failed to send covoiturage notification: ' . $e->getMessage());
         }
     }
+
+    public function sendAccountDeactivatedNotification(int $userId, string $userEmail): void
+    {
+        if (!$this->enabled || !$this->pusher) {
+            $this->logger->info('Pusher not enabled, skipping notification');
+            return;
+        }
+
+        try {
+            $this->pusher->trigger('admin-channel', 'account-deactivated', [
+                'type' => 'account',
+                'id' => $userId,
+                'title' => 'Compte desactive',
+                'message' => sprintf('Le compte %s vient d etre desactive par son proprietaire.', $userEmail),
+                'userId' => $userId,
+                'userEmail' => $userEmail,
+                'createdAt' => date('Y-m-d H:i:s')
+            ]);
+
+            $this->logger->info(sprintf('Account deactivation notification sent for user ID %d', $userId));
+        } catch (\Exception $e) {
+            $this->logger->error('Failed to send account deactivation notification: ' . $e->getMessage());
+        }
+    }
 }

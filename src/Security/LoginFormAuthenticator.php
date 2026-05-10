@@ -4,7 +4,6 @@ namespace App\Security;
 
 use App\Entity\User;
 use App\Repository\UserRepository;
-use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Response;
@@ -29,16 +28,12 @@ class LoginFormAuthenticator extends AbstractLoginFormAuthenticator
 
     public function __construct(
         private UrlGeneratorInterface $urlGenerator,
-        private UserRepository $userRepository,
-        private EntityManagerInterface $entityManager
+        private UserRepository $userRepository
     ) {}
 
-    /**
-     * 🔐 AUTHENTIFICATION
-     */
     public function authenticate(Request $request): Passport
     {
-        $email = trim((string) $request->request->get('_username', ''));
+        $email    = trim((string) $request->request->get('_username', ''));
         $password = (string) $request->request->get('_password', '');
 
         if ($email === '' || $password === '') {
@@ -51,18 +46,13 @@ class LoginFormAuthenticator extends AbstractLoginFormAuthenticator
 
         $user = $this->userRepository->findOneBy(['email' => $email]);
         if ($user instanceof User) {
-            if ($user->isDeactivatedByUser()) {
-                $request->getSession()->set('reactivation_email', $email);
-                throw new CustomUserMessageAuthenticationException('Compte desactive. Envoyez une demande de reactivation a l\'administrateur.');
-            }
-
             if ($user->isBanned()) {
                 $request->getSession()->set('reactivation_email', $email);
-                throw new CustomUserMessageAuthenticationException('Votre compte est banni. Envoyez une demande a l\'administrateur.');
+                throw new CustomUserMessageAuthenticationException('Votre compte est banni. Contactez l\'administrateur.');
             }
 
             if ($user->isSuspended()) {
-                throw new CustomUserMessageAuthenticationException('Votre compte est suspendu temporairement.');
+                throw new CustomUserMessageAuthenticationException('Votre compte est suspendu.');
             }
         }
 
@@ -78,9 +68,6 @@ class LoginFormAuthenticator extends AbstractLoginFormAuthenticator
         );
     }
 
-    /**
-     * ✅ REDIRECTION APRÈS LOGIN (US-04)
-     */
     public function onAuthenticationSuccess(
         Request $request,
         TokenInterface $token,
@@ -89,47 +76,27 @@ class LoginFormAuthenticator extends AbstractLoginFormAuthenticator
         $this->removeTargetPath($request->getSession(), $firewallName);
         $request->getSession()->remove('reactivation_email');
 
-        $user = $token->getUser();
-        if ($user instanceof User) {
-            $user->recordSuccessfulLogin($request->getClientIp());
-            $this->entityManager->flush();
-        }
-
+        $user  = $token->getUser();
         $roles = $user->getRoles();
 
         if (in_array('ROLE_ADMIN', $roles, true)) {
-            return new RedirectResponse(
-                $this->urlGenerator->generate('admin_dashboard')
-            );
+            return new RedirectResponse($this->urlGenerator->generate('admin_dashboard'));
         }
 
         if (in_array('ROLE_HOST', $roles, true)) {
-            return new RedirectResponse(
-                $this->urlGenerator->generate('host_dashboard')
-            );
+            return new RedirectResponse($this->urlGenerator->generate('host_dashboard'));
         }
 
-        return new RedirectResponse(
-            $this->urlGenerator->generate('app_profile')
-        );
+        return new RedirectResponse($this->urlGenerator->generate('app_profile'));
+    }
+
+    public function onAuthenticationFailure(Request $request, AuthenticationException $exception): Response
+    {
+        return parent::onAuthenticationFailure($request, $exception);
     }
 
     protected function getLoginUrl(Request $request): string
     {
         return $this->urlGenerator->generate(self::LOGIN_ROUTE);
-    }
-
-    public function onAuthenticationFailure(Request $request, AuthenticationException $exception): Response
-    {
-        $email = trim((string) $request->request->get('_username', ''));
-        if ($email !== '') {
-            $user = $this->userRepository->findOneBy(['email' => $email]);
-            if ($user instanceof User) {
-                $user->recordFailedLogin();
-                $this->entityManager->flush();
-            }
-        }
-
-        return parent::onAuthenticationFailure($request, $exception);
     }
 }

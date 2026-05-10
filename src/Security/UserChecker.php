@@ -16,7 +16,7 @@ class UserChecker implements UserCheckerInterface
         }
 
         if ($user->isBanned()) {
-            throw new CustomUserMessageAccountStatusException('Votre compte est banni. Envoyez une demande a l\'administrateur.');
+            throw new CustomUserMessageAccountStatusException('Votre compte est banni. Contactez l\'administrateur.');
         }
 
         if ($user->isSuspended()) {
@@ -24,8 +24,5 @@ class UserChecker implements UserCheckerInterface
         }
     }
 
-    public function checkPostAuth(UserInterface $user): void
-    {
-        // no-op
-    }
+    public function checkPostAuth(UserInterface $user): void {}
 }

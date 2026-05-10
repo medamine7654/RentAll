@@ -23,7 +23,13 @@
                 {% for logement in logements %}
                     <div class="bg-white rounded-xl shadow-lg overflow-hidden">
                         {% if logement.image %}
-                            <img src="{{ logement.image }}" class="w-full h-48 object-cover" alt="{{ logement.titre }}">
+                            <img src="{{ asset('uploads/logements/' ~ logement.image) }}"
+                                 class="w-full h-48 object-cover"
+                                 alt="{{ logement.titre }}"
+                                 onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                            <div class="w-full h-48 bg-gradient-to-br from-blue-400 to-blue-600 items-center justify-center hidden">
+                                <i class="fas fa-home text-white text-4xl"></i>
+                            </div>
                         {% else %}
                             <div class="w-full h-48 bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
                                 <svg class="w-16 h-16 text-white opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
