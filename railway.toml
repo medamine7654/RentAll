@@ -3,4 +3,4 @@ buildCommand = "composer run-script post-install-cmd && npm run build"
 
 [deploy]
 startCommand = "php -S 0.0.0.0:$PORT -t public/"
-preDeployCommand = ""
+preDeployCommand = "echo 'skipping migrations'"
