@@ -1,5 +1,5 @@
 [build]
-buildCommand = "composer install --optimize-autoloader --no-scripts --no-interaction && npm run build"
+buildCommand = "composer run-script post-install-cmd && npm run build"
 
 [deploy]
-startCommand = "php bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration --env=prod && php -S 0.0.0.0:$PORT -t public/"
+startCommand = "php -S 0.0.0.0:$PORT -t public/"
